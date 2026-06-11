@@ -1,0 +1,1251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* LIGHT MODE */
+:root {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+
+  /* Automatic computation of border around primary / danger buttons */
+  --opaque-button-border-intensity: -8; /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+
+  --background: 0 0% 100%;
+
+  --foreground: 240 10% 10%;
+
+  --border: 240 6% 90%;
+
+  --card: 240 10% 98%;
+
+  --card-foreground: 240 10% 10%;
+
+  --card-border: 240 6% 94%;
+
+  --sidebar: 240 8% 96%;
+
+  --sidebar-foreground: 240 10% 10%;
+
+  --sidebar-border: 240 6% 92%;
+
+  --sidebar-primary: 183 57% 41%;
+
+  --sidebar-primary-foreground: 0 0% 100%;
+
+  --sidebar-accent: 240 8% 90%;
+
+  --sidebar-accent-foreground: 240 10% 10%;
+
+  --sidebar-ring: 183 57% 41%;
+
+  --popover: 240 10% 94%;
+
+  --popover-foreground: 240 10% 10%;
+
+  --popover-border: 240 6% 88%;
+
+  --primary: 183 57% 41%;
+
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 8% 88%;
+
+  --secondary-foreground: 240 10% 10%;
+
+  --muted: 240 10% 92%;
+
+  --muted-foreground: 240 5% 45%;
+
+  --accent: 240 8% 90%;
+
+  --accent-foreground: 240 10% 10%;
+
+  --destructive: 0 84% 60%;
+
+  --destructive-foreground: 0 0% 100%;
+
+  --input: 240 8% 75%;
+  --ring: 183 57% 41%;
+  --chart-1: 210 90% 50%;
+  --chart-2: 200 90% 45%;
+  --chart-3: 142 76% 40%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 330 80% 55%;
+
+  --font-sans: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: "JetBrains Mono", Menlo, monospace;
+  --font-base-size: 16px;
+  --font-h1: clamp(1.875rem, 1.25vw + 1.5rem, 2.5rem);
+  --font-h2: clamp(1.5rem, 0.9vw + 1.25rem, 2rem);
+  --font-h3: clamp(1.25rem, 0.6vw + 1.05rem, 1.5rem);
+  --font-h4: 1.125rem;
+  --font-small: 0.9375rem;
+  --line-height-base: 1.6;
+  --radius: .5rem; /* 8px */
+  --shadow-2xs: 0px 1px 2px 0px hsl(240 10% 10% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(240 10% 10% / 0.08);
+  --shadow-sm: 0px 2px 4px -1px hsl(240 10% 10% / 0.06), 0px 1px 2px -1px hsl(240 10% 10% / 0.04);
+  --shadow: 0px 4px 6px -1px hsl(240 10% 10% / 0.08), 0px 2px 4px -1px hsl(240 10% 10% / 0.05);
+  --shadow-md: 0px 6px 12px -2px hsl(240 10% 10% / 0.10), 0px 3px 6px -2px hsl(240 10% 10% / 0.06);
+  --shadow-lg: 0px 10px 20px -4px hsl(240 10% 10% / 0.12), 0px 4px 8px -2px hsl(240 10% 10% / 0.08);
+  --shadow-xl: 0px 20px 30px -6px hsl(240 10% 10% / 0.15), 0px 8px 12px -4px hsl(240 10% 10% / 0.10);
+  --shadow-2xl: 0px 25px 50px -12px hsl(240 10% 10% / 0.20);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
+
+  /* Fallback for older browsers */
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+}
+
+.dark {
+  /* MATRIX dark palette — neon teal #00ffe7 on deep #020b14 */
+  --button-outline: rgba(0,255,231, .18);
+  --badge-outline: rgba(0,255,231, .14);
+
+  --opaque-button-border-intensity: 12;
+
+  --elevate-1: rgba(0,255,231, .05);
+  --elevate-2: rgba(0,255,231, .10);
+
+  --background: 207 78% 5%;          /* #020b14 */
+  --foreground: 173 80% 88%;         /* near-white teal text */
+
+  --border: 173 60% 14%;             /* faint teal divider */
+
+  --card: 207 65% 8%;                /* #071520 */
+  --card-foreground: 173 80% 90%;
+  --card-border: 173 60% 18%;
+
+  --sidebar: 207 78% 4%;
+  --sidebar-foreground: 173 70% 80%;
+  --sidebar-border: 173 60% 12%;
+  --sidebar-primary: 173 100% 50%;   /* neon */
+  --sidebar-primary-foreground: 207 80% 5%;
+  --sidebar-accent: 173 80% 10%;
+  --sidebar-accent-foreground: 173 100% 80%;
+  --sidebar-ring: 173 100% 50%;
+
+  --popover: 207 60% 7%;
+  --popover-foreground: 173 80% 90%;
+  --popover-border: 173 60% 18%;
+
+  --primary: 173 100% 50%;           /* #00ffe7 */
+  --primary-foreground: 207 80% 5%;
+
+  --secondary: 207 50% 12%;
+  --secondary-foreground: 173 70% 80%;
+
+  --muted: 207 50% 10%;
+  --muted-foreground: 173 25% 58%;
+
+  --accent: 173 100% 12%;
+  --accent-foreground: 173 100% 80%;
+
+  --destructive: 340 95% 58%;        /* hot magenta — cyberpunk danger */
+  --destructive-foreground: 207 80% 5%;
+
+  --input: 173 50% 18%;
+  --ring: 173 100% 50%;
+
+  --chart-1: 173 100% 50%;
+  --chart-2: 200 100% 60%;
+  --chart-3: 320 90% 60%;
+  --chart-4: 38 100% 60%;
+  --chart-5: 280 90% 65%;
+
+  /* Glow-tinted shadows */
+  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.45);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.50);
+  --shadow-sm: 0px 2px 6px -1px hsl(0 0% 0% / 0.55), 0px 0 0 1px hsl(173 100% 50% / 0.04);
+  --shadow: 0px 6px 18px -2px hsl(0 0% 0% / 0.55), 0px 0 0 1px hsl(173 100% 50% / 0.06);
+  --shadow-md: 0px 10px 30px -4px hsl(0 0% 0% / 0.55), 0px 0 24px hsl(173 100% 50% / 0.08);
+  --shadow-lg: 0px 18px 48px -6px hsl(0 0% 0% / 0.6), 0px 0 32px hsl(173 100% 50% / 0.1);
+  --shadow-xl: 0px 28px 60px -8px hsl(0 0% 0% / 0.65), 0px 0 48px hsl(173 100% 50% / 0.14);
+  --shadow-2xl: 0px 40px 80px -12px hsl(0 0% 0% / 0.7), 0px 0 64px hsl(173 100% 50% / 0.2);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: var(--font-base-size);
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-size: 1rem;
+    line-height: var(--line-height-base);
+    letter-spacing: var(--tracking-normal);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  h1 { font-size: var(--font-h1); line-height: 1.2; }
+  h2 { font-size: var(--font-h2); line-height: 1.3; }
+  h3 { font-size: var(--font-h3); line-height: 1.35; }
+  h4 { font-size: var(--font-h4); line-height: 1.4; }
+
+  p {
+    font-size: 1rem;
+    line-height: var(--line-height-base);
+  }
+
+  small, .text-small {
+    font-size: var(--font-small);
+    line-height: 1.5;
+  }
+}
+
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
+
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {}
+
+  .no-default-active-elevate {}
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+
+  /* Responsive Utilities for Mobile Optimization */
+
+  /* Responsive padding utilities - smaller on mobile, larger on desktop */
+  .responsive-p {
+    @apply p-4 md:p-6;
+  }
+
+  .responsive-px {
+    @apply px-4 md:px-6;
+  }
+
+  .responsive-py {
+    @apply py-4 md:py-6;
+  }
+
+  /* Responsive gap utilities for grids */
+  .responsive-gap {
+    @apply gap-4 md:gap-6;
+  }
+
+  .responsive-gap-sm {
+    @apply gap-3 md:gap-4;
+  }
+
+  .responsive-gap-lg {
+    @apply gap-6 md:gap-8;
+  }
+
+  /* Responsive container padding */
+  .responsive-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Mobile-optimized touch targets (44px minimum for iOS) */
+  .touch-target {
+    @apply min-h-11 min-w-11; /* 44px */
+  }
+
+  /* Smooth scrolling for mobile */
+  @supports (-webkit-touch-callout: none) {
+    .smooth-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Prevent text size adjustment on orientation change (iOS) */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Better tap highlighting for mobile */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .dark * {
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Safe area insets for iOS notch/home indicator */
+  @supports (padding: max(0px)) {
+    .safe-area-inset-top {
+      padding-top: max(1rem, env(safe-area-inset-top));
+    }
+
+    .safe-area-inset-bottom {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .safe-area-inset-left {
+      padding-left: max(1rem, env(safe-area-inset-left));
+    }
+
+    .safe-area-inset-right {
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+  }
+
+  /* Responsive table wrapper */
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide scrollbar but keep functionality (for cleaner mobile UI) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile-optimized dialog */
+  .mobile-dialog {
+    @apply max-h-[90vh] md:max-h-[85vh];
+  }
+
+  /* Filter dropdown scrollbar styling */
+  .filter-menu-scroll {
+    max-height: 20rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .filter-menu-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .filter-menu-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 9999px;
+  }
+
+  .filter-menu-scroll::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  /* Prevent horizontal scroll on mobile */
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Infinite scroll carousel animation */
+  @keyframes scroll-infinite {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll-infinite {
+    display: flex;
+    animation: scroll-infinite 60s linear infinite;
+    width: fit-content;
+  }
+
+  /* Reverse infinite scroll carousel animation */
+  @keyframes scroll-infinite-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-scroll-infinite-reverse {
+    display: flex;
+    animation: scroll-infinite-reverse 60s linear infinite;
+    width: fit-content;
+  }
+}
+
+/* =========================================================
+   MATRIX GLOBAL THEME LAYER
+   Applied app-wide via the forced `.dark` class on <html>.
+   Keeps shadcn primitives readable while adding neon polish.
+   ========================================================= */
+
+.dark body {
+  font-family: var(--font-mono);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  letter-spacing: 0.01em;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4 {
+  font-family: var(--font-mono);
+  letter-spacing: -0.005em;
+  color: hsl(var(--foreground));
+}
+
+.dark ::selection {
+  background: rgba(0, 255, 231, 0.3);
+  color: #fff;
+}
+
+/* Neon scrollbar */
+.dark ::-webkit-scrollbar { width: 10px; height: 10px; }
+.dark ::-webkit-scrollbar-track { background: rgba(0, 255, 231, 0.04); }
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 255, 231, 0.25), rgba(0, 255, 231, 0.15));
+  border-radius: 4px;
+  border: 2px solid hsl(var(--background));
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 255, 231, 0.45), rgba(0, 255, 231, 0.3));
+}
+.dark { scrollbar-color: rgba(0, 255, 231, 0.3) rgba(0, 255, 231, 0.04); scrollbar-width: thin; }
+
+/* Neon focus rings on inputs and buttons across the app */
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark select:focus-visible,
+.dark button:focus-visible,
+.dark [role="combobox"]:focus-visible,
+.dark [role="button"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(0, 255, 231, 0.6), 0 0 18px rgba(0, 255, 231, 0.2);
+}
+
+/* Tap targets — meet 44px minimum on touch */
+@media (pointer: coarse) {
+  .dark button,
+  .dark [role="button"],
+  .dark a.btn,
+  .dark .touchable {
+    min-height: 44px;
+  }
+}
+
+/* Matrix utility classes */
+@layer utilities {
+  .neon-text { color: #00ffe7; text-shadow: 0 0 12px rgba(0, 255, 231, 0.45); }
+  .neon-strong { color: #00ffe7; text-shadow: 0 0 20px rgba(0, 255, 231, 0.75), 0 0 36px rgba(0, 255, 231, 0.3); }
+  .neon-border { border: 1px solid rgba(0, 255, 231, 0.25); }
+  .neon-border-strong { border: 1px solid rgba(0, 255, 231, 0.55); box-shadow: 0 0 18px rgba(0, 255, 231, 0.18); }
+  .neon-glow { box-shadow: 0 0 24px rgba(0, 255, 231, 0.22); }
+  .neon-glow-strong { box-shadow: 0 0 48px rgba(0, 255, 231, 0.55); }
+  .mono { font-family: var(--font-mono); }
+  .bg-panel { background: #071520; }
+  .bg-panel-2 { background: rgba(0, 255, 231, 0.03); }
+}
+
+/* Matrix global keyframes used across pages */
+@keyframes mx-pulse { 0%,100%{box-shadow:0 0 14px rgba(0,255,231,0.35)} 50%{box-shadow:0 0 32px rgba(0,255,231,0.85)} }
+@keyframes mx-blink { 50%{opacity:0} }
+@keyframes mx-floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes mx-shimmer { 0%{left:-60%} 60%,100%{left:140%} }
+@keyframes mx-borderRun { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+@keyframes mx-scanMove { 0%{top:-20%} 100%{top:120%} }
+@keyframes mx-pageGlow { 0%,100%{opacity:.3} 50%{opacity:.6} }
+
+.mx-shimmer-overlay {
+  position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: rgba(255,255,255,0.25); transform: skewX(-20deg);
+  animation: mx-shimmer 3s ease-in-out infinite; pointer-events: none;
+}
+
+/* Premium hover lift used on primary CTAs */
+.mx-cta {
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #004d42, #00ffe7);
+  color: #000; font-weight: 900; letter-spacing: 0.08em;
+  border: none;
+  box-shadow: 0 0 28px rgba(0, 255, 231, 0.4);
+  transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s cubic-bezier(.16,1,.3,1);
+  min-height: 44px;
+}
+.mx-cta:hover { transform: translateY(-2px); box-shadow: 0 0 56px rgba(0, 255, 231, 0.7); }
+.mx-cta:active { transform: translateY(0); }
+
+/* =========================================================
+   LEGACY UTILITY SHIM
+   Many pre-existing pages hardcoded light Tailwind classes
+   (bg-white, bg-gray-50, text-gray-900, border-gray-100, etc.)
+   that bypass the design tokens. In forced-dark matrix mode
+   they render as bright white panels and unreadable dark text.
+   The shim below remaps those utility classes to matrix-dark
+   equivalents so every page picks up the new aesthetic without
+   per-page rewrites.
+   ========================================================= */
+
+/* --- Backgrounds: solid neutrals -> dark panels --- */
+.dark .bg-white { background-color: hsl(var(--card)) !important; }
+.dark .bg-gray-50 { background-color: hsl(var(--background)) !important; }
+.dark .bg-gray-100 { background-color: hsl(var(--muted)) !important; }
+.dark .bg-gray-200 { background-color: hsl(var(--accent)) !important; }
+.dark .bg-slate-50 { background-color: hsl(var(--background)) !important; }
+.dark .bg-slate-100 { background-color: hsl(var(--muted)) !important; }
+
+/* --- Hover backgrounds --- */
+.dark .hover\:bg-white:hover { background-color: hsl(var(--card)) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: rgba(0, 255, 231, 0.06) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: rgba(0, 255, 231, 0.10) !important; }
+.dark .hover\:bg-gray-200:hover { background-color: rgba(0, 255, 231, 0.14) !important; }
+.dark .hover\:bg-slate-50:hover { background-color: rgba(0, 255, 231, 0.06) !important; }
+
+/* --- Text colors: dark neutrals -> readable foreground --- */
+.dark .text-black { color: hsl(var(--foreground)) !important; }
+.dark .text-gray-900 { color: hsl(var(--foreground)) !important; }
+.dark .text-gray-800 { color: hsl(var(--foreground)) !important; }
+.dark .text-gray-700 { color: hsl(var(--foreground)) !important; }
+.dark .text-gray-600 { color: hsl(var(--muted-foreground)) !important; }
+.dark .text-gray-500 { color: hsl(var(--muted-foreground)) !important; }
+.dark .text-gray-400 { color: hsl(var(--muted-foreground)) !important; }
+.dark .text-gray-300 { color: hsl(var(--muted-foreground)) !important; opacity: 0.7; }
+.dark .text-slate-900 { color: hsl(var(--foreground)) !important; }
+.dark .text-slate-700 { color: hsl(var(--foreground)) !important; }
+.dark .text-slate-600 { color: hsl(var(--muted-foreground)) !important; }
+.dark .text-slate-500 { color: hsl(var(--muted-foreground)) !important; }
+
+.dark .hover\:text-gray-900:hover { color: hsl(var(--primary)) !important; }
+.dark .hover\:text-gray-700:hover { color: hsl(var(--primary)) !important; }
+
+/* --- Borders --- */
+.dark .border-gray-100 { border-color: hsl(var(--border)) !important; }
+.dark .border-gray-200 { border-color: hsl(var(--border)) !important; }
+.dark .border-gray-300 { border-color: hsl(var(--border)) !important; }
+.dark .border-slate-100 { border-color: hsl(var(--border)) !important; }
+.dark .border-slate-200 { border-color: hsl(var(--border)) !important; }
+.dark .border-white { border-color: hsl(var(--card-border)) !important; }
+.dark .divide-gray-100 > * + * { border-color: hsl(var(--border)) !important; }
+.dark .divide-gray-200 > * + * { border-color: hsl(var(--border)) !important; }
+.dark .ring-gray-100 { --tw-ring-color: hsl(var(--border)) !important; }
+.dark .ring-gray-200 { --tw-ring-color: hsl(var(--border)) !important; }
+
+/* --- Placeholders --- */
+.dark .placeholder\:text-gray-400::placeholder,
+.dark .placeholder\:text-gray-500::placeholder { color: rgba(0, 255, 231, 0.35) !important; }
+
+/* --- Pale gradient panels (placeholders, hero washes) -> dark --- */
+.dark [class*="bg-gradient-to-"][class*="from-gray-50"],
+.dark [class*="bg-gradient-to-"][class*="from-gray-100"],
+.dark [class*="bg-gradient-to-"][class*="from-slate-50"],
+.dark [class*="bg-gradient-to-"][class*="from-purple-50"],
+.dark [class*="bg-gradient-to-"][class*="from-purple-100"],
+.dark [class*="bg-gradient-to-"][class*="from-pink-50"],
+.dark [class*="bg-gradient-to-"][class*="from-pink-100"],
+.dark [class*="bg-gradient-to-"][class*="from-violet-50"],
+.dark [class*="bg-gradient-to-"][class*="from-violet-100"],
+.dark [class*="bg-gradient-to-"][class*="from-indigo-50"],
+.dark [class*="bg-gradient-to-"][class*="from-indigo-100"],
+.dark [class*="bg-gradient-to-"][class*="from-blue-50"],
+.dark [class*="bg-gradient-to-"][class*="from-blue-100"],
+.dark [class*="bg-gradient-to-"][class*="from-teal-50"],
+.dark [class*="bg-gradient-to-"][class*="from-cyan-50"],
+.dark [class*="bg-gradient-to-"][class*="from-green-50"],
+.dark [class*="bg-gradient-to-"][class*="from-green-100"],
+.dark [class*="bg-gradient-to-"][class*="from-yellow-50"],
+.dark [class*="bg-gradient-to-"][class*="from-yellow-100"],
+.dark [class*="bg-gradient-to-"][class*="from-rose-50"],
+.dark [class*="bg-gradient-to-"][class*="from-rose-100"] {
+  background-image: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted))) !important;
+}
+
+/* Inline-style gradients used in legacy landing/marketing wash sections */
+.dark [style*="linear-gradient(135deg, #e0f7f6"],
+.dark [style*="linear-gradient(135deg,#e0f7f6"] {
+  background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted))) !important;
+}
+
+/* --- Page-level wrappers (admin pages commonly use min-h-screen bg-gray-50) ---
+   Make these transparent so the global matrix backdrop shows through. */
+.dark .min-h-screen.bg-gray-50,
+.dark .min-h-screen.bg-white,
+.dark .min-h-screen.bg-slate-50 { background-color: transparent !important; }
+
+/* --- Icon-fill helpers: dark-on-light icons inside light circle wrappers --- */
+.dark .text-gray-600 svg,
+.dark .text-gray-500 svg,
+.dark .text-gray-400 svg { stroke: hsl(var(--muted-foreground)); }
+
+/* --- Light status pills (bg-green-100 etc.) — keep contrast in dark
+   Tailwind compiles these with literal HSL values. Reduce alpha so they
+   feel like neon tinted pills instead of bright pastel blocks. --- */
+.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.15) !important; }
+.dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.18) !important; }
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.18) !important; }
+.dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.15) !important; }
+.dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.18) !important; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.15) !important; }
+.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.18) !important; }
+.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.15) !important; }
+.dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.18) !important; }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.18) !important; }
+.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.15) !important; }
+.dark .bg-rose-100 { background-color: rgba(244, 63, 94, 0.18) !important; }
+.dark .bg-purple-50 { background-color: rgba(168, 85, 247, 0.15) !important; }
+.dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.18) !important; }
+.dark .bg-pink-50 { background-color: rgba(236, 72, 153, 0.15) !important; }
+.dark .bg-pink-100 { background-color: rgba(236, 72, 153, 0.18) !important; }
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.18) !important; }
+.dark .bg-cyan-50 { background-color: rgba(0, 255, 231, 0.12) !important; }
+.dark .bg-cyan-100 { background-color: rgba(0, 255, 231, 0.16) !important; }
+.dark .bg-teal-50 { background-color: rgba(0, 255, 231, 0.12) !important; }
+.dark .bg-teal-100 { background-color: rgba(0, 255, 231, 0.16) !important; }
+
+/* Brighten the dark-700 text variants so labels stay readable on dark pills */
+.dark .text-green-700, .dark .text-green-800 { color: rgb(74, 222, 128) !important; }
+.dark .text-blue-700, .dark .text-blue-800 { color: rgb(96, 165, 250) !important; }
+.dark .text-yellow-700, .dark .text-yellow-800 { color: rgb(250, 204, 21) !important; }
+.dark .text-amber-700, .dark .text-amber-800 { color: rgb(252, 211, 77) !important; }
+.dark .text-orange-700, .dark .text-orange-800 { color: rgb(251, 146, 60) !important; }
+.dark .text-red-700, .dark .text-red-800 { color: rgb(248, 113, 113) !important; }
+.dark .text-rose-700, .dark .text-rose-800 { color: rgb(251, 113, 133) !important; }
+.dark .text-purple-700, .dark .text-purple-800 { color: rgb(192, 132, 252) !important; }
+.dark .text-pink-700, .dark .text-pink-800 { color: rgb(244, 114, 182) !important; }
+.dark .text-emerald-700, .dark .text-emerald-800 { color: rgb(52, 211, 153) !important; }
+.dark .text-cyan-700, .dark .text-cyan-800 { color: rgb(0, 255, 231) !important; }
+.dark .text-teal-700, .dark .text-teal-800 { color: rgb(0, 255, 231) !important; }
+
+/* Coloured borders on pills — match the brightened text */
+.dark .border-green-300 { border-color: rgba(74, 222, 128, 0.4) !important; }
+.dark .border-blue-300 { border-color: rgba(96, 165, 250, 0.4) !important; }
+.dark .border-amber-300 { border-color: rgba(252, 211, 77, 0.4) !important; }
+.dark .border-orange-300 { border-color: rgba(251, 146, 60, 0.4) !important; }
+.dark .border-rose-300 { border-color: rgba(251, 113, 133, 0.4) !important; }
+.dark .border-purple-300 { border-color: rgba(192, 132, 252, 0.4) !important; }
+.dark .border-emerald-300 { border-color: rgba(52, 211, 153, 0.4) !important; }
+
+/* --- Ring offsets / focus-rings using white --- */
+.dark .ring-white { --tw-ring-color: hsl(var(--background)) !important; }
+
+/* --- Make every page mount above the matrix backdrop --- */
+.dark main, .dark [data-sidebar] { position: relative; z-index: 5; }
+
+/* ============================================================
+   AFFEXCH starfield — the dotted background from the landing.
+   Two tiled radial-gradient layers (white + neon teal) drifting
+   slowly. Mounted via <AffexchStarfield /> in App.tsx, skipped
+   on the landing route since landing has its own atmosphere.
+   ============================================================ */
+.fx-starfield {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-color: #02090f;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%,  rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 28% 72%,  rgba(0, 255, 231, 0.45),   transparent 60%),
+    radial-gradient(1px 1px at 44% 36%,  rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 62% 84%,  rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 14%,  rgba(0, 255, 231, 0.55),   transparent 60%),
+    radial-gradient(1px 1px at 92% 56%,  rgba(255, 255, 255, 0.4),  transparent 60%),
+    radial-gradient(1px 1px at 8% 92%,   rgba(0, 255, 231, 0.35),   transparent 60%),
+    radial-gradient(1px 1px at 56% 6%,   rgba(255, 255, 255, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 36% 58%,  rgba(0, 255, 231, 0.3),    transparent 60%),
+    radial-gradient(1px 1px at 70% 42%,  rgba(255, 255, 255, 0.3),  transparent 60%),
+    radial-gradient(2px 2px at 22% 48%,  rgba(255, 255, 255, 0.5),  transparent 65%),
+    radial-gradient(2px 2px at 86% 78%,  rgba(0, 255, 231, 0.4),    transparent 65%),
+    radial-gradient(circle at 50% 38%, rgba(0, 255, 231, 0.05), transparent 60%);
+  background-size: 100% 100%;
+  animation: fx-starfield-drift 60s linear infinite;
+}
+@keyframes fx-starfield-drift {
+  0%   { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%; }
+  100% { background-position: -2% 1%, 1% -2%, -1% 2%, 2% -1%, -2% -1%, 1% 2%, -1% -2%, 2% 1%, -1% 1%, 1% -1%, -2% 2%, 2% -2%, 0% 0%; }
+}
+
+/* Twinkle helper for hero/header areas (optional). */
+@keyframes fx-twinkle {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+/* ============================================================
+   AFFEXCH brand-logo glow — the pulsing neon halo lifted from
+   the landing topbar (.brand__logo). Apply to <img> brand
+   chips in the creator sidebar + admin top-nav.
+   ============================================================ */
+.fx-logo-glow {
+  filter: drop-shadow(0 0 8px rgba(0, 255, 231, 0.55));
+  animation: fx-logo-pulse 2.4s ease-in-out infinite;
+}
+@keyframes fx-logo-pulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(0, 255, 231, 0.45)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(0, 255, 231, 0.9)); }
+}
+
+/* ============================================================
+   AFFEXCH card chrome — scan line + corner brackets, lifted
+   from the landing peptide cards.
+   ============================================================ */
+.fx-card-scan {
+  position: relative;
+  overflow: hidden;
+}
+.fx-card-scan::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -40%;
+  height: 38%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(0, 255, 231, 0.18),
+    transparent
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1;
+}
+.fx-card-scan:hover::before {
+  opacity: 1;
+  animation: fx-card-scan-move 1.6s linear infinite;
+}
+@keyframes fx-card-scan-move {
+  0%   { top: -40%; }
+  100% { top: 120%; }
+}
+
+.fx-corners {
+  position: relative;
+}
+.fx-corners::before,
+.fx-corners::after,
+.fx-corners > .fx-corner-bl,
+.fx-corners > .fx-corner-br {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  z-index: 3;
+  animation: fx-corner-blink 2s ease-in-out infinite;
+}
+.fx-corners::before {
+  top: 4px;
+  left: 4px;
+  border-top: 1px solid hsl(173 100% 50%);
+  border-left: 1px solid hsl(173 100% 50%);
+}
+.fx-corners::after {
+  top: 4px;
+  right: 4px;
+  border-top: 1px solid hsl(173 100% 50%);
+  border-right: 1px solid hsl(173 100% 50%);
+  animation-delay: 0.5s;
+}
+@keyframes fx-corner-blink {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+/* ============================================================
+   AFFEXCH text scramble — for page headings.
+   ============================================================ */
+@keyframes fx-text-scramble-in {
+  0%   { opacity: 0; letter-spacing: 0.4em; filter: blur(4px); }
+  60%  { opacity: 1; letter-spacing: 0.2em; filter: blur(0); }
+  100% { opacity: 1; letter-spacing: normal; filter: none; }
+}
+.fx-text-in {
+  animation: fx-text-scramble-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fx-text-glow {
+  0%, 100% { text-shadow: 0 0 8px rgba(0, 255, 231, 0.3); }
+  50%      { text-shadow: 0 0 16px rgba(0, 255, 231, 0.7), 0 0 24px rgba(0, 255, 231, 0.35); }
+}
+.fx-text-glow {
+  animation: fx-text-glow 3.6s ease-in-out infinite;
+}
+
+/* Periodic glitch — RGB-split jitter every ~5s, lifted from landing
+   `.glitch-shift`. Best on short headings / brand labels. */
+@keyframes fx-glitch-shift {
+  0%, 92%, 100% { transform: translate(0); filter: none; }
+  93% { transform: translate(-3px, 1px); filter: drop-shadow(2px 0 #ff2bd6) drop-shadow(-2px 0 #0088ff); }
+  94% { transform: translate(3px, -1px); filter: drop-shadow(-2px 0 #ff2bd6) drop-shadow(2px 0 #0088ff); }
+  95% { transform: translate(-2px, 0); }
+  96% { transform: translate(2px, 1px); filter: drop-shadow(2px 0 #ff2bd6); }
+}
+.fx-glitch {
+  display: inline-block;
+  animation: fx-glitch-shift 5s ease-in-out infinite;
+}
+
+/* Caret blink — for terminal-style cursors next to headings. */
+@keyframes fx-blink {
+  50% { opacity: 0; }
+}
+.fx-caret {
+  display: inline-block;
+  color: hsl(173 100% 50%);
+  animation: fx-blink 0.8s step-end infinite;
+}
+
+/* Float-y — gentle vertical bob, lifted from landing `.hero__scroll`. */
+@keyframes fx-float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.fx-float {
+  animation: fx-float-y 3s ease-in-out infinite;
+}
+
+/* ============================================================
+   AFFEXCH slide-in family — entrance animations that pair with
+   fx-text-in / fx-text-glow for layered combinations on headers
+   + subtitles + sub-rows. Cubic-bezier matches landing reveal.
+   ============================================================ */
+@keyframes fx-slide-up {
+  0%   { opacity: 0; transform: translateY(28px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fx-slide-up {
+  animation: fx-slide-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fx-slide-down {
+  0%   { opacity: 0; transform: translateY(-28px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fx-slide-down {
+  animation: fx-slide-down 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fx-slide-left {
+  0%   { opacity: 0; transform: translateX(-32px); filter: brightness(1.6); }
+  100% { opacity: 1; transform: translateX(0); filter: none; }
+}
+.fx-slide-left {
+  animation: fx-slide-left 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fx-slide-right {
+  0%   { opacity: 0; transform: translateX(32px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.fx-slide-right {
+  animation: fx-slide-right 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Composable reveal — opacity + slight rise; same vibe as landing
+   `.reveal.is-in` but no IntersectionObserver, just plays once on
+   mount. Use as the subtitle pair under fx-text-in headers. */
+@keyframes fx-reveal {
+  0%   { opacity: 0; transform: translateY(38px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fx-reveal {
+  animation: fx-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Delay helpers so a header → subtitle → cards cascade staggers. */
+.fx-delay-1 { animation-delay: 0.12s; }
+.fx-delay-2 { animation-delay: 0.24s; }
+.fx-delay-3 { animation-delay: 0.36s; }
+.fx-delay-4 { animation-delay: 0.48s; }
+
+/* ============================================================
+   AFFEXCH highlight-sweep — a neon selection bar wipes left→right
+   across text as it appears, then exits right. Designed to layer
+   on top of fx-text-in + fx-text-glow + fx-caret. Apply via the
+   `fx-text-sweep` wrapper class.
+   ============================================================ */
+.fx-text-sweep {
+  position: relative;
+  display: inline-block;
+}
+.fx-text-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 231, 0.0) 0%,
+    rgba(0, 255, 231, 0.32) 50%,
+    rgba(0, 255, 231, 0.0) 100%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: fx-text-sweep-wipe 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+@keyframes fx-text-sweep-wipe {
+  0%   { left: 0;    width: 0;    opacity: 1; }
+  35%  { left: 0;    width: 100%; opacity: 1; }
+  70%  { left: 0;    width: 100%; opacity: 1; }
+  100% { left: 100%; width: 0;    opacity: 0; }
+}
+
+/* ============================================================
+   AFFEXCH custom cursor — trailing neon dots that follow the
+   pointer. Mounted app-wide via <AffexchCursor /> in App.tsx.
+   Disabled automatically on touch / coarse-pointer devices.
+   ============================================================ */
+.cursor-dot {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(0, 255, 231, 0.5);
+  will-change: transform;
+}
+
+/* ============================================================
+   AFFEXCH boot loader — initialising screen shown on first
+   load + heavy data fetches. Matches the landing Boot.jsx look.
+   ============================================================ */
+.affx-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(1200px 600px at 50% 30%, rgba(0,255,231,0.05), transparent 65%),
+    #020b14;
+  color: hsl(173 100% 80%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  animation: affx-boot-fade-in 0.2s ease-out;
+}
+.affx-boot--out {
+  animation: affx-boot-fade-out 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes affx-boot-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes affx-boot-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; visibility: hidden; }
+}
+.affx-boot__inner {
+  width: min(540px, calc(100vw - 32px));
+  padding: 0 20px;
+}
+.affx-boot__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #eafffd;
+  text-transform: uppercase;
+}
+.affx-boot__logo {
+  height: 38px;
+  width: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 0 16px rgba(0, 255, 231, 0.45);
+}
+.affx-boot__log {
+  min-height: 130px;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: rgba(0, 255, 231, 0.78);
+}
+.affx-boot__line {
+  animation: affx-boot-line-in 0.22s ease-out both;
+}
+@keyframes affx-boot-line-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: none; }
+}
+.affx-boot__caret {
+  display: inline-block;
+  color: #eafffd;
+  animation: affx-boot-caret 0.9s steps(2) infinite;
+}
+@keyframes affx-boot-caret {
+  50% { opacity: 0; }
+}
+.affx-boot__bar {
+  margin-top: 16px;
+  height: 3px;
+  background: rgba(0, 255, 231, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.affx-boot__bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,255,231,0.95), transparent);
+  background-size: 200% 100%;
+  animation: affx-boot-bar-run 1.6s linear infinite;
+  transition: width 0.22s ease-out;
+}
+@keyframes affx-boot-bar-run {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.affx-boot__pct {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 0.72rem;
+  color: rgba(0, 255, 231, 0.6);
+  letter-spacing: 0.14em;
+}
+
+/* ============================================================
+   AFFEXCH animation kit — small set of utility classes shared
+   across the authenticated app. Pure CSS, GPU-friendly, no JS.
+   ============================================================ */
+
+@keyframes fx-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fx-fade-up {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes fx-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fx-slide-right {
+  from { opacity: 0; transform: translate3d(-6px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes fx-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 231, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(0, 255, 231, 0.12); }
+}
+
+@keyframes fx-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Page-level entry: fade + small upward slide. Apply once per page wrapper. */
+.fx-page {
+  animation: fx-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Standalone entries */
+.fx-fade-in  { animation: fx-fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fx-fade-up  { animation: fx-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fx-scale-in { animation: fx-scale-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fx-slide-right { animation: fx-slide-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Stagger: parent applies .fx-stagger, children inherit fade-up with
+   increasing delay. Works up to 16 children — more than that gets a
+   uniform 480ms delay so nothing stalls. */
+.fx-stagger > *                   { animation: fx-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: 480ms; }
+.fx-stagger > *:nth-child(1)      { animation-delay:  40ms; }
+.fx-stagger > *:nth-child(2)      { animation-delay:  90ms; }
+.fx-stagger > *:nth-child(3)      { animation-delay: 140ms; }
+.fx-stagger > *:nth-child(4)      { animation-delay: 190ms; }
+.fx-stagger > *:nth-child(5)      { animation-delay: 240ms; }
+.fx-stagger > *:nth-child(6)      { animation-delay: 290ms; }
+.fx-stagger > *:nth-child(7)      { animation-delay: 340ms; }
+.fx-stagger > *:nth-child(8)      { animation-delay: 380ms; }
+.fx-stagger > *:nth-child(9)      { animation-delay: 410ms; }
+.fx-stagger > *:nth-child(10)     { animation-delay: 430ms; }
+.fx-stagger > *:nth-child(11)     { animation-delay: 450ms; }
+.fx-stagger > *:nth-child(12)     { animation-delay: 470ms; }
+
+/* Card hover: tiny lift + neon teal border glow. Applies to anything
+   under .fx-cards on hover/focus-within, so we keep the markup clean. */
+.fx-cards .fx-card,
+.fx-card {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, box-shadow;
+}
+.fx-card:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 6px 24px rgba(0, 255, 231, 0.08), 0 0 0 1px rgba(0, 255, 231, 0.18);
+}
+.dark .fx-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 255, 231, 0.12), 0 0 0 1px rgba(0, 255, 231, 0.28);
+}
+
+/* Tap/active press for clickable elements */
+.fx-tap { transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1); }
+.fx-tap:active { transform: scale(0.97); }
+
+/* Skeleton shimmer for loading placeholders */
+.fx-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.10) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: fx-shimmer 1.4s linear infinite;
+}
+
+/* Active-row pulse glow — for "needs attention" rows (e.g. pending payouts) */
+.fx-pulse-glow { animation: fx-pulse-glow 2.4s ease-in-out infinite; }
+
+/* Respect reduced motion site-wide */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

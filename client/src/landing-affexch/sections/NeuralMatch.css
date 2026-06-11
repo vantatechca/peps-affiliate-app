@@ -1,0 +1,87 @@
+.nn {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 120px 0 60px;
+  background: radial-gradient(circle at 70% 50%, rgba(0, 255, 231, 0.05), transparent 60%), #02090f;
+}
+
+.nn__head {
+  position: absolute;
+  top: clamp(80px, 12vh, 116px);
+  left: max(44px, 6vw);
+  z-index: 5;
+  max-width: 540px;
+}
+.nn__title {
+  margin-top: 16px;
+  font-size: clamp(1.6rem, 4vw, 3.1rem);
+  color: var(--white);
+  line-height: 1.05;
+  text-shadow: 0 0 36px rgba(0, 255, 231, 0.22);
+}
+.nn__title span { color: var(--neon); }
+
+.nn__tag {
+  position: absolute;
+  bottom: clamp(40px, 9vh, 90px);
+  left: max(44px, 6vw);
+  max-width: 320px;
+  z-index: 5;
+}
+
+.nn__graph {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nn__graph svg {
+  width: min(1180px, 94vw);
+  height: auto;
+  overflow: visible;
+  margin-top: 7vh;
+}
+
+.nn-col { fill: var(--n-35); font-size: 13px; letter-spacing: 0.18em; font-family: var(--mono); text-anchor: middle; }
+
+.nn-edge { stroke: rgba(0, 255, 231, 0.07); stroke-width: 0.6; }
+.nn-edge.l2 { stroke: rgba(0, 255, 231, 0.1); }
+
+.nn-node { fill: #052a23; stroke: var(--neon); stroke-width: 1.2; }
+.nn-node--in { fill: #062f27; }
+.is-in .nn-node {
+  animation: nn-node-pulse 2.6s ease-in-out infinite;
+  animation-delay: var(--d);
+}
+@keyframes nn-node-pulse {
+  0%, 100% { fill: #052a23; filter: drop-shadow(0 0 0 rgba(0, 255, 231, 0)); }
+  50% { fill: rgba(0, 255, 231, 0.55); filter: drop-shadow(0 0 5px rgba(0, 255, 231, 0.7)); }
+}
+
+.nn-pulse { fill: #eafffd; filter: drop-shadow(0 0 4px var(--neon)); }
+.nn-pulse.hot { fill: var(--hot); filter: drop-shadow(0 0 5px var(--hot)); }
+
+.nn-in-label { fill: var(--n-60); font-size: 12px; letter-spacing: 0.1em; text-anchor: end; font-family: var(--mono); }
+
+/* product matches */
+.nn-node--out { fill: #062f27; }
+.nn-prod-name { fill: var(--white); font-size: 14px; letter-spacing: 0.06em; font-family: var(--mono); }
+.nn-bar-bg { fill: rgba(0, 255, 231, 0.08); }
+.nn-bar-fill { fill: var(--neon); transition: width 1.3s cubic-bezier(0.22, 1, 0.36, 1); filter: drop-shadow(0 0 5px rgba(0, 255, 231, 0.5)); }
+.nn-prod-pct { fill: var(--neon); font-size: 14px; font-family: var(--display); font-weight: 700; }
+
+.nn-prod--top .nn-node--out { stroke: var(--neon); stroke-width: 2; filter: drop-shadow(0 0 8px var(--neon)); }
+.nn-prod--top .nn-prod-name { fill: var(--neon); }
+.nn-prod--top .nn-bar-fill { fill: var(--neon); }
+.nn-prod--top .nn-prod-pct { font-size: 17px; }
+
+@media (max-width: 760px) {
+  .nn__head { max-width: 80vw; }
+  .nn__tag { display: none; }
+  .nn__graph { top: 38%; }
+}

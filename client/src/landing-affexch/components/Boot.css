@@ -1,0 +1,87 @@
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: radial-gradient(ellipse at center, #04141f, #010810 70%);
+  display: grid;
+  place-items: center;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.boot--out {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+.boot__inner {
+  width: min(540px, 86vw);
+  padding: 0 8px;
+}
+.boot__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--white);
+  font-size: 1.1rem;
+  margin-bottom: 22px;
+  text-shadow: 0 0 22px rgba(0, 255, 231, 0.4);
+}
+.boot__mark {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--neon);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--neon);
+  animation: pulse-box 2s ease-in-out infinite;
+}
+.boot__logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 8px;
+  filter: drop-shadow(0 0 12px rgba(0, 255, 231, 0.65));
+  animation: pulse-box 2s ease-in-out infinite;
+}
+.boot__log {
+  font-size: 0.74rem;
+  line-height: 1.85;
+  color: var(--n-60);
+  min-height: 11.5em;
+}
+.boot__line {
+  animation: boot-in 0.3s ease both;
+}
+@keyframes boot-in {
+  from { opacity: 0; transform: translateX(-8px); }
+}
+.boot__caret {
+  color: var(--neon);
+  animation: blink 0.8s step-end infinite;
+}
+.boot__bar {
+  margin-top: 18px;
+  height: 3px;
+  background: var(--n-10);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.boot__bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-deep), var(--neon));
+  box-shadow: 0 0 14px var(--neon);
+  transition: width 0.3s ease;
+}
+.boot__pct {
+  margin-top: 8px;
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--n-45);
+  text-align: right;
+}

@@ -1,0 +1,345 @@
+/* ============================================================
+   Peptide Offers — affiliate catalog grid
+   Cards reveal on scroll, 3D-tilt on hover, neon scan-line sweeps,
+   blinking corner brackets. Matches the AFFEXCH terminal aesthetic.
+   ============================================================ */
+
+.pep {
+  padding: clamp(80px, 12vh, 140px) max(28px, 6vw) clamp(80px, 12vh, 140px);
+}
+
+.pep__head {
+  text-align: center;
+  margin: 0 auto clamp(36px, 5vh, 64px);
+  max-width: 880px;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pep__head.is-in { opacity: 1; transform: none; }
+
+.pep__eyebrow {
+  justify-content: center;
+  display: inline-flex;
+  margin-bottom: 18px;
+  animation: float-y 3s ease-in-out infinite;
+}
+
+.pep__title {
+  font-size: clamp(1.8rem, 4.2vw, 3.2rem);
+  letter-spacing: 0.02em;
+  margin-bottom: 14px;
+  color: var(--white);
+  text-shadow: 0 0 26px rgba(0, 255, 231, 0.22);
+}
+
+.pep__sub {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  color: var(--n-45);
+}
+
+/* ---------- Grid ---------- */
+.pep__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* ---------- Card wrapper (reveal target) ---------- */
+.pep-card-wrap {
+  opacity: 0;
+  transform: translateY(36px) scale(0.96);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pep-card-wrap.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Card ---------- */
+.pep-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--n-15);
+  border-radius: 10px;
+  padding: 22px 22px 18px;
+  overflow: hidden;
+  cursor: none;
+  transition: border-color 0.35s, box-shadow 0.35s, transform 0.2s ease;
+  transform-style: preserve-3d;
+  animation: pep-breath 4.5s ease-in-out infinite;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+@media (pointer: coarse) {
+  .pep-card { cursor: pointer; }
+}
+
+.pep-card:hover {
+  border-color: var(--neon);
+  box-shadow:
+    0 0 36px rgba(0, 255, 231, 0.22),
+    inset 0 0 24px rgba(0, 255, 231, 0.06);
+}
+
+@keyframes pep-breath {
+  0%, 100% { border-color: rgba(0, 255, 231, 0.12); box-shadow: 0 0 0 rgba(0, 255, 231, 0); }
+  50%      { border-color: rgba(0, 255, 231, 0.28); box-shadow: 0 0 20px rgba(0, 255, 231, 0.08); }
+}
+
+/* ---------- Card head: NO_xxx + badge ---------- */
+.pep-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono);
+  position: relative;
+  z-index: 2;
+}
+.pep-card__no {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: var(--n-45);
+}
+.pep-card__badge {
+  background: linear-gradient(135deg, var(--neon-deep), var(--neon));
+  color: #021016;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  box-shadow: 0 0 14px rgba(0, 255, 231, 0.45);
+}
+
+/* ---------- Card body: peptide name ---------- */
+.pep-card__body { position: relative; z-index: 2; }
+.pep-card__name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 2.5vw, 1.95rem);
+  letter-spacing: 0.01em;
+  color: var(--white);
+  margin-bottom: 6px;
+  text-shadow: 0 0 18px rgba(0, 255, 231, 0.25);
+}
+.pep-card__sub {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--n-45);
+}
+
+/* ---------- Card foot: price + earn pill ---------- */
+.pep-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px dashed var(--n-15);
+  font-family: var(--mono);
+  position: relative;
+  z-index: 2;
+}
+.pep-card__price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.04em;
+}
+.pep-card__earn {
+  background: rgba(0, 255, 231, 0.08);
+  border: 1px solid rgba(0, 255, 231, 0.32);
+  color: var(--neon);
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Scan line — sweeps top→bottom on hover ---------- */
+.pep-card__scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 38%;
+  top: -40%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(0, 255, 231, 0.18),
+    transparent
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1;
+}
+.pep-card:hover .pep-card__scan {
+  opacity: 1;
+  animation: pep-scan 1.6s linear infinite;
+}
+@keyframes pep-scan {
+  0%   { top: -40%; }
+  100% { top: 120%; }
+}
+
+/* ---------- Blinking corner brackets ---------- */
+.pep-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  z-index: 3;
+  animation: pep-corner-blink 2s ease-in-out infinite;
+}
+.pep-corner.tl { top: 6px;    left: 6px;    border-top: 1px solid var(--neon); border-left: 1px solid var(--neon); }
+.pep-corner.tr { top: 6px;    right: 6px;   border-top: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 0.5s; }
+.pep-corner.bl { bottom: 6px; left: 6px;    border-bottom: 1px solid var(--neon); border-left: 1px solid var(--neon); animation-delay: 1s; }
+.pep-corner.br { bottom: 6px; right: 6px;   border-bottom: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 1.5s; }
+@keyframes pep-corner-blink {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+/* ---------- City row (only when a city is selected) ---------- */
+.pep__city-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pep__city-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 255, 231, 0.08);
+  border: 1px solid rgba(0, 255, 231, 0.35);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-family: var(--mono);
+  color: var(--neon);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0 16px rgba(0, 255, 231, 0.18);
+}
+.pep__city-meta {
+  font-size: 0.62rem;
+  color: var(--n-45);
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+.pep__city-change,
+.pep__city-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 231, 0.2);
+  color: var(--n-60);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: none;
+  transition: all 0.2s;
+}
+.pep__city-change:hover,
+.pep__city-clear:hover {
+  border-color: var(--neon);
+  color: var(--neon);
+  background: rgba(0, 255, 231, 0.05);
+}
+.pep__city-clear { padding: 6px 10px; font-size: 0.8rem; }
+@media (pointer: coarse) {
+  .pep__city-change,
+  .pep__city-clear { cursor: pointer; }
+}
+
+/* ---------- Local-business card variant ---------- */
+.pep-card.is-local {
+  border-color: rgba(0, 255, 231, 0.22);
+}
+.pep-card__local {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--mono);
+}
+.pep-card__peptide {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--neon);
+  letter-spacing: 0.08em;
+}
+.pep-card__hood {
+  font-size: 0.66rem;
+  color: var(--n-45);
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Bottom CTA (only when no city selected) ---------- */
+.pep__cta-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 36px;
+}
+.pep__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--neon-deep), var(--neon));
+  border: none;
+  color: #021016;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  padding: 13px 22px;
+  border-radius: 4px;
+  cursor: none;
+  box-shadow: 0 0 22px rgba(0, 255, 231, 0.35);
+  transition: transform 0.25s, box-shadow 0.25s;
+  min-height: 44px;
+}
+.pep__cta:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0, 255, 231, 0.65); }
+.pep__cta-hint {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--n-45);
+}
+@media (pointer: coarse) {
+  .pep__cta { cursor: pointer; }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+  .pep { padding: 64px 18px; }
+  .pep-card { padding: 18px 18px 16px; min-height: 160px; }
+  .pep__grid { gap: 14px; grid-template-columns: repeat(2, 1fr); }
+  .pep-card__name { font-size: clamp(1rem, 4vw, 1.3rem); }
+}
+/* Phase 9: single column on small phones (375px) to avoid cramped cards. */
+@media (max-width: 420px) {
+  .pep__grid { grid-template-columns: 1fr; }
+}

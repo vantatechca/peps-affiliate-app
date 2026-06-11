@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(ls \"C:/Users/Jheraldine Nagma/Downloads/AFFEXCH\" 2>&1 | head -50)",
+      "Read(//c/Users/Jheraldine Nagma/Downloads/AFFEXCH/**)",
+      "Bash(npm install *)",
+      "Bash(cp \"C:/Users/Jheraldine Nagma/Downloads/AFFEXCH/AFFEXCH/src/Landing.jsx\" \"d:/Projects/Affiliate/AffiliateXchange/client/src/landing-affexch/Landing.jsx\" && ls \"d:/Projects/Affiliate/AffiliateXchange/client/src/landing-affexch/Landing.jsx\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(file *.png)",
+      "Bash(grep -n -A 1 'src=\"/logo\\\\.png\"' d:/Projects/Affiliate/AffiliateXchange/__TRACKED_VAR__)",
+      "Bash(npx tsx *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@affiliatexchange.ca\",\"password\":\"wrong-on-purpose\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@affiliatexchange.ca\",\"password\":\"Admin123!@#\"}')"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Jheraldine Nagma\\Downloads\\AFFEXCH\\AFFEXCH\\src"
+    ]
+  }
+}

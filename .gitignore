@@ -1,0 +1,54 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+server/public
+
+# Environment variables
+.env
+.env.local
+.env.production
+.storage-key.json
+
+# Google Cloud Storage Keys (NEVER commit these!)
+keys/
+*-key.json
+gcs-*.json
+
+# Google Cloud credentials
+config/*.json
+*-tool-development-478707-2c70538ff11c.json
+
+# Database exports
+database-export-*.json
+database-dump.sql
+*.sql
+!db/migrations/*.sql
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea
+
+# Replit-specific
+.replit
+vite.config.ts.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archives
+*.tar.gz
+*.zip
+
+# Temporary files
+*.tmp
+.cache
+# Snyk Security Extension - AI Rules (auto-generated)
+.github\instructions\snyk_rules.instructions.md
+node_modules

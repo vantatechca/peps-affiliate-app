@@ -1,0 +1,248 @@
+/* ============================================================
+   How It Works — three-step explainer
+   Card breath, sweep-down light, blinking corner brackets,
+   dashed orbital ring around the icon, icon float + pulse,
+   number flicker, title glow, progress bar at bottom.
+   ============================================================ */
+
+.how {
+  padding: clamp(80px, 12vh, 140px) max(28px, 6vw);
+}
+
+.how__head {
+  text-align: center;
+  margin: 0 auto clamp(40px, 6vh, 72px);
+  max-width: 880px;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.how__head.is-in { opacity: 1; transform: none; }
+
+.how__eyebrow {
+  display: inline-flex;
+  margin-bottom: 18px;
+  animation: float-y 3s ease-in-out infinite;
+}
+
+.how__title {
+  font-size: clamp(1.8rem, 4.2vw, 3.2rem);
+  letter-spacing: 0.02em;
+  margin-bottom: 14px;
+  color: var(--white);
+  text-shadow: 0 0 26px rgba(0, 255, 231, 0.22);
+}
+
+.how__sub {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  color: var(--n-45);
+}
+
+/* ---------- Grid ---------- */
+.how__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+@media (min-width: 760px) {
+  .how__grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+/* ---------- Reveal wrapper ---------- */
+.how-wrap {
+  opacity: 0;
+  transform: translateY(36px) scale(0.97);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.how-wrap.is-in { opacity: 1; transform: none; }
+
+/* ---------- Card ---------- */
+.how-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--n-15);
+  border-radius: 12px;
+  padding: 44px 28px 36px;
+  text-align: center;
+  overflow: hidden;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.35s,
+              box-shadow 0.35s;
+  animation: how-breath 4s ease-in-out infinite;
+}
+.how-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(0, 255, 231, 0.55);
+  box-shadow:
+    0 0 40px rgba(0, 255, 231, 0.22),
+    inset 0 0 30px rgba(0, 255, 231, 0.05);
+}
+
+/* continuous breath */
+@keyframes how-breath {
+  0%, 100% { border-color: rgba(0, 255, 231, 0.10); box-shadow: 0 0 0 rgba(0, 255, 231, 0); }
+  50%      { border-color: rgba(0, 255, 231, 0.26); box-shadow: 0 0 22px rgba(0, 255, 231, 0.08); }
+}
+
+/* ---------- Sweep — vertical light strip cycles top→bottom ---------- */
+.how-card__sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 38%;
+  top: -40%;
+  background: linear-gradient(180deg, transparent, rgba(0, 255, 231, 0.14), transparent);
+  pointer-events: none;
+  animation: how-sweep 4s linear infinite;
+  z-index: 1;
+}
+@keyframes how-sweep {
+  0%   { top: -40%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 140%; opacity: 0; }
+}
+
+/* ---------- Dashed orbital ring around the icon ---------- */
+.how-card__ring {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  border: 1px dashed rgba(0, 255, 231, 0.18);
+  border-radius: 50%;
+  top: 28px;
+  left: 50%;
+  margin-left: -48px;
+  animation: how-ring-spin 14s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes how-ring-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ---------- Corner brackets — staggered blink ---------- */
+.how-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  z-index: 3;
+  animation: how-corner-blink 2s ease-in-out infinite;
+}
+.how-corner.tl { top: 8px;    left: 8px;    border-top: 1px solid var(--neon); border-left: 1px solid var(--neon); }
+.how-corner.tr { top: 8px;    right: 8px;   border-top: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 0.5s; }
+.how-corner.bl { bottom: 8px; left: 8px;    border-bottom: 1px solid var(--neon); border-left: 1px solid var(--neon); animation-delay: 1s; }
+.how-corner.br { bottom: 8px; right: 8px;   border-bottom: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 1.5s; }
+@keyframes how-corner-blink {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+/* ---------- Icon — float + pulse ---------- */
+.how-card__ico {
+  position: relative;
+  z-index: 2;
+  color: var(--neon);
+  margin: 0 auto 18px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  animation: how-ico-float 4s ease-in-out infinite, how-ico-pulse 3s ease-in-out infinite;
+}
+.how-card__ico svg {
+  filter: drop-shadow(0 0 6px rgba(0, 255, 231, 0.55));
+}
+@keyframes how-ico-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-6px) rotate(-4deg); }
+  75%      { transform: translateY(-3px) rotate(4deg); }
+}
+@keyframes how-ico-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(0, 255, 231, 0.4)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(0, 255, 231, 0.95)); }
+}
+
+/* ---------- // 0X number — flicker ---------- */
+.how-card__no {
+  position: relative;
+  z-index: 2;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: var(--neon);
+  margin-bottom: 10px;
+  animation: how-num-flicker 5s infinite;
+}
+@keyframes how-num-flicker {
+  0%, 100% { opacity: 0.45; }
+  47%      { opacity: 0.45; }
+  48%      { opacity: 0.9; }
+  49%      { opacity: 0.3; }
+  50%      { opacity: 0.95; }
+  51%      { opacity: 0.45; }
+}
+
+/* ---------- Title — glow pulse ---------- */
+.how-card__title {
+  position: relative;
+  z-index: 2;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  color: var(--neon);
+  margin-bottom: 14px;
+  animation: how-title-glow 3s ease-in-out infinite;
+}
+@keyframes how-title-glow {
+  0%, 100% { text-shadow: 0 0 8px rgba(0, 255, 231, 0.3); }
+  50%      { text-shadow: 0 0 22px rgba(0, 255, 231, 0.85), 0 0 38px rgba(0, 255, 231, 0.3); }
+}
+
+/* ---------- Description ---------- */
+.how-card__desc {
+  position: relative;
+  z-index: 2;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  line-height: 1.7;
+  color: var(--n-60);
+  max-width: 28ch;
+  margin: 0 auto;
+}
+
+/* ---------- Bottom progress bar — fills + clears ---------- */
+.how-card__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon), transparent);
+  pointer-events: none;
+  animation: how-bar-fill 4s ease-in-out infinite;
+  z-index: 3;
+}
+@keyframes how-bar-fill {
+  0%   { width: 0%; }
+  50%  { width: 100%; }
+  100% { width: 0%; }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+  .how { padding: 64px 18px; }
+  .how-card { padding: 36px 22px 30px; }
+}

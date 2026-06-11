@@ -1,0 +1,407 @@
+/* ============================================================
+   City Select Modal
+   Full-screen dark overlay, neon-bordered panel, searchable input,
+   10 quick-select tiles, smooth open/close, full mobile support.
+   ============================================================ */
+
+.city-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ---------- Backdrop ---------- */
+.city-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 9, 15, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  border: none;
+  cursor: none;
+  padding: 0;
+  margin: 0;
+  transition: background 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              backdrop-filter 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              -webkit-backdrop-filter 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.city-modal.is-open .city-modal__backdrop {
+  background: rgba(2, 9, 15, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+@media (pointer: coarse) {
+  .city-modal__backdrop { cursor: pointer; }
+}
+
+/* Scanline texture sits on top of the backdrop */
+.city-modal__backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    rgba(0, 255, 231, 0.03) 3px 4px
+  );
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  pointer-events: none;
+}
+.city-modal.is-open .city-modal__backdrop::before { opacity: 1; }
+
+/* ---------- Panel ---------- */
+.city-modal__panel {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid rgba(0, 255, 231, 0.35);
+  border-radius: 14px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(0, 255, 231, 0.18),
+    inset 0 0 40px rgba(0, 255, 231, 0.03);
+  width: min(640px, 92vw);
+  max-height: 88vh;
+  padding: clamp(28px, 4vw, 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(28px) scale(0.96);
+  transition: opacity 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: auto;
+  cursor: none;
+}
+@media (pointer: coarse) {
+  .city-modal__panel { cursor: auto; }
+}
+.city-modal.is-open .city-modal__panel {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Close ---------- */
+.city-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 231, 0.25);
+  color: var(--neon);
+  border-radius: 6px;
+  cursor: none;
+  z-index: 4;
+  transition: all 0.25s;
+}
+.city-modal__close:hover {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.08);
+  box-shadow: 0 0 16px rgba(0, 255, 231, 0.3);
+  transform: rotate(90deg);
+}
+
+/* ---------- Corner brackets ---------- */
+.city-modal__corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 3;
+  animation: city-corner-blink 2s ease-in-out infinite;
+}
+.city-modal__corner.tl { top: 10px;    left: 10px;    border-top: 1px solid var(--neon); border-left: 1px solid var(--neon); }
+.city-modal__corner.tr { top: 10px;    right: 10px;   border-top: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 0.5s; }
+.city-modal__corner.bl { bottom: 10px; left: 10px;    border-bottom: 1px solid var(--neon); border-left: 1px solid var(--neon); animation-delay: 1s; }
+.city-modal__corner.br { bottom: 10px; right: 10px;   border-bottom: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 1.5s; }
+@keyframes city-corner-blink {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+/* ---------- Head ---------- */
+.city-modal__head {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.city-modal__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: var(--n-45);
+  margin-bottom: 12px;
+}
+.city-modal__eyebrow .sq {
+  width: 6px; height: 6px;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+}
+.city-modal__title {
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  color: var(--white);
+  text-shadow: 0 0 22px rgba(0, 255, 231, 0.35);
+}
+.city-modal__sub {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--n-45);
+}
+
+/* ---------- Search ---------- */
+.city-modal__searchwrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  background: rgba(0, 255, 231, 0.04);
+  border: 1px solid rgba(0, 255, 231, 0.25);
+  border-radius: 6px;
+  min-height: 50px;
+  margin-bottom: 22px;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+}
+.city-modal__searchwrap:focus-within {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.06);
+  box-shadow: 0 0 20px rgba(0, 255, 231, 0.2);
+}
+.city-modal__search-ico { color: var(--neon); flex-shrink: 0; }
+.city-modal__input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--neon);
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  padding: 12px 0;
+  min-height: 50px;
+}
+.city-modal__input::placeholder { color: rgba(0, 255, 231, 0.4); }
+.city-modal__clear {
+  background: transparent;
+  border: none;
+  color: var(--n-60);
+  padding: 6px;
+  border-radius: 4px;
+  cursor: none;
+  display: grid;
+  place-items: center;
+  transition: color 0.2s, background 0.2s;
+}
+.city-modal__clear:hover { color: var(--neon); background: rgba(0, 255, 231, 0.1); }
+
+/* ---------- Search results ---------- */
+.city-modal__results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+.city-modal__result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 255, 231, 0.02);
+  border: 1px solid rgba(0, 255, 231, 0.1);
+  border-radius: 6px;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  color: var(--neon);
+  cursor: none;
+  text-align: left;
+  min-height: 50px;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  animation: city-result-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.city-modal__result:hover {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.08);
+  transform: translateX(4px);
+}
+.city-modal__result-ico { color: var(--neon); flex-shrink: 0; }
+.city-modal__result-name { flex: 1; font-weight: 700; letter-spacing: 0.04em; }
+.city-modal__result-meta {
+  font-size: 0.72rem;
+  color: var(--n-45);
+  letter-spacing: 0.1em;
+}
+@keyframes city-result-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.city-modal__empty {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  color: var(--n-45);
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.city-modal__empty span {
+  font-size: 0.74rem;
+  color: var(--n-45);
+  opacity: 0.6;
+}
+
+/* ---------- Divider ---------- */
+.city-modal__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: var(--n-45);
+  margin-bottom: 14px;
+}
+.city-modal__divider .sq {
+  width: 28px; height: 1px;
+  background: rgba(0, 255, 231, 0.25);
+}
+
+/* ---------- Grid of quick-select tiles ---------- */
+.city-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
+}
+@media (min-width: 520px) {
+  .city-modal__grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 720px) {
+  .city-modal__grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.city-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: rgba(0, 255, 231, 0.03);
+  border: 1px solid rgba(0, 255, 231, 0.15);
+  border-radius: 7px;
+  padding: 14px 12px;
+  font-family: var(--mono);
+  cursor: none;
+  text-align: left;
+  color: var(--neon);
+  min-height: 78px;
+  transition: border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
+  animation: city-tile-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+.city-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent, rgba(0, 255, 231, 0.04));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.city-tile:hover {
+  border-color: var(--neon);
+  transform: translateY(-2px);
+  box-shadow: 0 0 22px rgba(0, 255, 231, 0.22);
+}
+.city-tile:hover::before { opacity: 1; }
+@keyframes city-tile-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+.city-tile__no {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: var(--n-45);
+  position: relative;
+}
+.city-tile__name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--white);
+  text-shadow: 0 0 10px rgba(0, 255, 231, 0.18);
+  position: relative;
+}
+.city-tile__meta {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--n-45);
+  position: relative;
+}
+
+@media (pointer: coarse) {
+  .city-modal__close,
+  .city-modal__clear,
+  .city-modal__result,
+  .city-tile { cursor: pointer; }
+}
+
+/* ---------- Footer ---------- */
+.city-modal__foot {
+  margin-top: 16px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--n-45);
+  padding-top: 14px;
+  border-top: 1px dashed rgba(0, 255, 231, 0.12);
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+  .city-modal__panel {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    padding: 24px 18px 18px;
+  }
+  .city-modal__close { top: 16px; right: 16px; }
+  .city-modal__head { margin-top: 14px; margin-bottom: 16px; }
+  .city-modal__searchwrap { margin-bottom: 18px; }
+  .city-modal__corner { display: none; }
+}
+
+/* Custom scrollbar inside the modal */
+.city-modal__results::-webkit-scrollbar,
+.city-modal__grid::-webkit-scrollbar { width: 6px; }
+.city-modal__results::-webkit-scrollbar-thumb,
+.city-modal__grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 231, 0.25);
+  border-radius: 3px;
+}

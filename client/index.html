@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="The ultimate marketplace connecting creators with brands for influencer marketing campaigns. Discover affiliate opportunities, earn commissions, and grow your creator business." />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <title>AffiliateXchange - Affiliate Marketplace for Creators & Brands</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Chakra+Petch:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    >
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      Small non-module script runs before Vite injects its HMR client (which is injected
+      before the first module script). This sanitizes malformed WebSocket URLs such as
+      "ws://localhost:undefined/..." by replacing ":undefined" with the current
+      location port (if available) or removing the suffix. This prevents the
+      `Failed to construct 'WebSocket'` errors visible in the dev console.
+    -->
+    <script>
+      (function() {
+        try {
+          var OriginalWebSocket = window.WebSocket;
+          // Override only once
+          if (!OriginalWebSocket || OriginalWebSocket.__patched_for_undefined_port) return;
+
+          function sanitizeUrl(url) {
+            try {
+              if (!url || typeof url !== 'string') return url;
+              // Fix common pattern like ":undefined" inserted into host:port
+              if (url.indexOf(':undefined') !== -1) {
+                var port = window.location && window.location.port ? window.location.port : '';
+                if (port) {
+                  return url.replace(':undefined', ':' + port);
+                }
+                return url.replace(':undefined', '');
+              }
+              return url;
+            } catch (e) {
+              return url;
+            }
+          }
+
+          // @ts-ignore - intentionally generic wrapper
+          function WrappedWebSocket(url, protocols) {
+            var sanitized = url;
+            try { sanitized = sanitizeUrl(url && url.toString ? url.toString() : url); } catch(e) {}
+            // Support calling with a URL-like object (some clients pass objects)
+            return protocols !== undefined
+              ? new OriginalWebSocket(sanitized, protocols)
+              : new OriginalWebSocket(sanitized);
+          }
+
+          // Copy static properties
+          for (var k in OriginalWebSocket) {
+            try { WrappedWebSocket[k] = OriginalWebSocket[k]; } catch (e) {}
+          }
+          WrappedWebSocket.prototype = OriginalWebSocket.prototype;
+          WrappedWebSocket.__patched_for_undefined_port = true;
+          window.WebSocket = WrappedWebSocket;
+        } catch (e) {
+          // noop
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

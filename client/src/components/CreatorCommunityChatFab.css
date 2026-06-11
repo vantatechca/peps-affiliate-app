@@ -1,0 +1,171 @@
+/* ============================================================
+   Creator Community Chat FAB
+   Same look as the landing-page launcher but anchored bottom-LEFT
+   so it doesn't fight with right-side topbar controls / scrollbars.
+   ============================================================ */
+
+.cccfab {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 22px 0 18px;
+  background: linear-gradient(135deg, hsl(173 100% 35%), hsl(173 100% 50%));
+  color: #021016;
+  border: none;
+  border-radius: 26px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 900;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 231, 0.45),
+    0 6px 22px rgba(0, 255, 231, 0.32),
+    0 0 38px rgba(0, 255, 231, 0.4);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s,
+              opacity 0.25s;
+  animation: cccfab-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes cccfab-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.85); }
+  to   { opacity: 1; transform: none; }
+}
+.cccfab:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 231, 0.6),
+    0 10px 32px rgba(0, 255, 231, 0.45),
+    0 0 60px rgba(0, 255, 231, 0.7);
+}
+.cccfab:active { transform: translateY(0); }
+.cccfab--hidden {
+  opacity: 0;
+  transform: translateY(8px) scale(0.9);
+  pointer-events: none;
+}
+
+.cccfab__ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 34px;
+  border: 1px solid rgba(0, 255, 231, 0.18);
+  pointer-events: none;
+}
+.cccfab__pulse {
+  position: absolute;
+  inset: -2px;
+  border-radius: 28px;
+  background: rgba(0, 255, 231, 0.25);
+  pointer-events: none;
+  animation: cccfab-pulse 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  z-index: -1;
+}
+@keyframes cccfab-pulse {
+  0%   { opacity: 0.55; transform: scale(0.95); }
+  70%  { opacity: 0; transform: scale(1.35); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
+.cccfab__label { white-space: nowrap; }
+
+/* Unread badge (cosmetic teaser, mirrors landing) */
+.cccfab__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: #ff0066;
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 900;
+  font-size: 0.66rem;
+  display: grid;
+  place-items: center;
+  letter-spacing: 0.02em;
+  border: 2px solid #020b14;
+  box-shadow: 0 0 12px rgba(255, 0, 102, 0.7);
+}
+
+/* ---------- Modal ---------- */
+.cccp {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+}
+.cccp__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 9, 15, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: background 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              backdrop-filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              -webkit-backdrop-filter 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cccp.is-open .cccp__backdrop {
+  background: rgba(2, 9, 15, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+.cccp__panel {
+  position: absolute;
+  bottom: 22px;
+  right: 22px;
+  width: 400px;
+  max-width: calc(100vw - 44px);
+  height: min(620px, calc(100vh - 130px));
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(20px) scale(0.96);
+  transform-origin: bottom right;
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cccp.is-open .cccp__panel { opacity: 1; transform: none; }
+
+@media (max-width: 600px) {
+  .cccfab {
+    bottom: 16px;
+    right: 16px;
+    padding: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  .cccfab__label { display: none; }
+
+  .cccp.is-open .cccp__backdrop {
+    background: rgba(2, 9, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .cccp__panel {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    bottom: 0;
+    right: 0;
+    transform: translateY(28px);
+    transform-origin: bottom center;
+  }
+}

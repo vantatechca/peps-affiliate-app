@@ -1,0 +1,286 @@
+/* ============================================================
+   Affiliate Community Chat — panel-only (no section wrapper).
+   Designed to live inside CommunityChatPopup. Dark cards with
+   neon borders, username in neon, message in muted white.
+   ============================================================ */
+
+/* ---------- Panel ---------- */
+.acc__panel {
+  position: relative;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid rgba(0, 255, 231, 0.3);
+  border-radius: 14px;
+  box-shadow:
+    0 0 32px rgba(0, 255, 231, 0.14),
+    inset 0 0 24px rgba(0, 255, 231, 0.03);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.acc__corner {
+  position: absolute;
+  width: 12px; height: 12px;
+  pointer-events: none;
+  z-index: 3;
+  animation: acc-corner-blink 2s ease-in-out infinite;
+}
+.acc__corner.tl { top: 6px;    left: 6px;    border-top: 1px solid var(--neon); border-left: 1px solid var(--neon); }
+.acc__corner.tr { top: 6px;    right: 6px;   border-top: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 0.5s; }
+.acc__corner.bl { bottom: 6px; left: 6px;    border-bottom: 1px solid var(--neon); border-left: 1px solid var(--neon); animation-delay: 1s; }
+.acc__corner.br { bottom: 6px; right: 6px;   border-bottom: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 1.5s; }
+@keyframes acc-corner-blink {
+  0%, 100% { opacity: 0.3; } 50% { opacity: 1; }
+}
+
+/* ---------- Chrome (channel name + online + close X) ---------- */
+.acc__chrome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px dashed rgba(0, 255, 231, 0.18);
+  background: rgba(0, 255, 231, 0.04);
+  font-family: var(--mono);
+  flex-shrink: 0;
+}
+.acc__chrome-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: rgba(0, 255, 231, 0.35);
+  flex-shrink: 0;
+}
+.acc__chrome-dot.is-on {
+  background: var(--neon);
+  box-shadow: 0 0 10px rgba(0, 255, 231, 0.8);
+  animation: acc-dot-pulse 1.6s ease-in-out infinite;
+}
+@keyframes acc-dot-pulse {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.2); }
+}
+.acc__chrome-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.acc__chrome-channel {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  color: var(--neon);
+  text-shadow: 0 0 10px rgba(0, 255, 231, 0.4);
+}
+.acc__chrome-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: rgba(0, 255, 231, 0.5);
+}
+.acc__pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+  animation: acc-dot-pulse 1.6s ease-in-out infinite;
+}
+.acc__chrome-close {
+  width: 34px; height: 34px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 231, 0.25);
+  color: var(--neon);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s;
+  flex-shrink: 0;
+}
+.acc__chrome-close:hover {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.1);
+  box-shadow: 0 0 14px rgba(0, 255, 231, 0.35);
+  transform: rotate(90deg);
+}
+
+/* ---------- Feed ---------- */
+.acc__feed {
+  padding: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  scroll-behavior: smooth;
+}
+.acc__feed::-webkit-scrollbar { width: 6px; }
+.acc__feed::-webkit-scrollbar-thumb { background: rgba(0, 255, 231, 0.25); border-radius: 3px; }
+
+/* ---------- Message card ---------- */
+.acc-msg {
+  position: relative;
+  background: rgba(0, 255, 231, 0.025);
+  border: 1px solid rgba(0, 255, 231, 0.16);
+  border-radius: 8px;
+  padding: 11px 13px;
+  animation: acc-msg-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.25s, background 0.25s, transform 0.25s;
+}
+.acc-msg:hover {
+  border-color: rgba(0, 255, 231, 0.4);
+  background: rgba(0, 255, 231, 0.05);
+  transform: translateX(2px);
+}
+.acc-msg--self {
+  border-color: rgba(0, 255, 231, 0.4);
+  background: rgba(0, 255, 231, 0.05);
+  box-shadow: 0 0 18px rgba(0, 255, 231, 0.12);
+}
+@keyframes acc-msg-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.acc-msg__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+}
+.acc-msg__avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-deep), var(--neon));
+  color: #021016;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-weight: 900;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 10px rgba(0, 255, 231, 0.35);
+  flex-shrink: 0;
+}
+.acc-msg__user {
+  font-weight: 800;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  color: var(--neon);
+  text-shadow: 0 0 8px rgba(0, 255, 231, 0.4);
+}
+.acc-msg__sep { color: rgba(0, 255, 231, 0.3); }
+.acc-msg__time {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  color: rgba(0, 255, 231, 0.42);
+}
+
+.acc-msg__text {
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: rgba(234, 246, 245, 0.78);
+  margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Composer ---------- */
+.acc__compose {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px dashed rgba(0, 255, 231, 0.18);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+.acc__compose-handle {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--neon);
+  background: rgba(0, 255, 231, 0.06);
+  border: 1px solid rgba(0, 255, 231, 0.25);
+  border-radius: 5px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  max-width: 30%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acc__compose-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(0, 255, 231, 0.04);
+  border: 1px solid rgba(0, 255, 231, 0.22);
+  color: var(--neon);
+  font-family: var(--mono);
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  padding: 0 14px;
+  border-radius: 5px;
+  outline: none;
+  min-height: 44px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.acc__compose-input::placeholder { color: rgba(0, 255, 231, 0.35); }
+.acc__compose-input:focus {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.07);
+  box-shadow: 0 0 18px rgba(0, 255, 231, 0.18);
+}
+.acc__compose-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--neon-deep), var(--neon));
+  border: none;
+  color: #021016;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  padding: 0 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(0, 255, 231, 0.35);
+  min-height: 44px;
+  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+  flex-shrink: 0;
+}
+.acc__compose-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px rgba(0, 255, 231, 0.7);
+}
+.acc__compose-btn:disabled {
+  filter: grayscale(0.6) brightness(0.65);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ---------- Mobile (full-screen popup uses these) ---------- */
+@media (max-width: 600px) {
+  .acc-msg { padding: 10px 12px; }
+  .acc-msg__text { font-size: 0.82rem; }
+  .acc__chrome { padding: 12px 14px; }
+  .acc__chrome-channel { font-size: 0.78rem; }
+  .acc__compose { padding: 10px; gap: 6px; }
+  .acc__compose-handle { display: none; }
+  .acc__compose-btn { padding: 0 12px; }
+  .acc__compose-btn span { display: none; }
+}

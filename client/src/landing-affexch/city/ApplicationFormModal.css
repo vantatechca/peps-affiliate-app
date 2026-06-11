@@ -1,0 +1,649 @@
+/* ============================================================
+   Application Form Modal — step 2 of the apply flow.
+   Dark matrix theme, neon-bordered inputs, monospace,
+   inline validation, smooth slide-up animation, mobile full-screen.
+   ============================================================ */
+
+.appform {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;             /* above city modal (1000) so chain handoff works */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ---------- Backdrop ---------- */
+.appform__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 9, 15, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  border: none;
+  cursor: none;
+  padding: 0;
+  margin: 0;
+  transition: background 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              backdrop-filter 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              -webkit-backdrop-filter 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.appform.is-open .appform__backdrop {
+  background: rgba(2, 9, 15, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+@media (pointer: coarse) {
+  .appform__backdrop { cursor: pointer; }
+}
+.appform__backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 255, 231, 0.03) 3px 4px);
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  pointer-events: none;
+}
+.appform.is-open .appform__backdrop::before { opacity: 1; }
+
+/* ---------- Panel ---------- */
+.appform__panel {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid rgba(0, 255, 231, 0.35);
+  border-radius: 14px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(0, 255, 231, 0.18),
+    inset 0 0 40px rgba(0, 255, 231, 0.03);
+  width: min(660px, 92vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(28px) scale(0.96);
+  transition: opacity 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: auto;
+  cursor: none;
+}
+@media (pointer: coarse) {
+  .appform__panel { cursor: auto; }
+}
+.appform.is-open .appform__panel { opacity: 1; transform: none; }
+
+/* ---------- Close + corner brackets ---------- */
+.appform__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 231, 0.25);
+  color: var(--neon);
+  border-radius: 6px;
+  cursor: none;
+  z-index: 4;
+  transition: all 0.25s;
+}
+.appform__close:hover {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.08);
+  box-shadow: 0 0 16px rgba(0, 255, 231, 0.3);
+  transform: rotate(90deg);
+}
+.appform__corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  pointer-events: none;
+  z-index: 3;
+  animation: appform-corner-blink 2s ease-in-out infinite;
+}
+.appform__corner.tl { top: 10px; left: 10px; border-top: 1px solid var(--neon); border-left: 1px solid var(--neon); }
+.appform__corner.tr { top: 10px; right: 10px; border-top: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 0.5s; }
+.appform__corner.bl { bottom: 10px; left: 10px; border-bottom: 1px solid var(--neon); border-left: 1px solid var(--neon); animation-delay: 1s; }
+.appform__corner.br { bottom: 10px; right: 10px; border-bottom: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 1.5s; }
+@keyframes appform-corner-blink {
+  0%, 100% { opacity: 0.3; } 50% { opacity: 1; }
+}
+
+/* ---------- Head ---------- */
+.appform__head {
+  text-align: center;
+  padding: clamp(28px, 4vw, 36px) clamp(24px, 4vw, 40px) 18px;
+  flex-shrink: 0;
+}
+.appform__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  color: var(--n-45);
+  margin-bottom: 12px;
+}
+.appform__eyebrow .sq {
+  width: 6px; height: 6px;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+}
+.appform__title {
+  font-size: clamp(1.5rem, 3.8vw, 2.2rem);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  color: var(--white);
+  text-shadow: 0 0 22px rgba(0, 255, 231, 0.35);
+}
+.appform__sub {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--n-45);
+}
+
+/* ---------- Form ---------- */
+.appform__form {
+  padding: 6px clamp(24px, 4vw, 40px) clamp(24px, 4vw, 36px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.appform__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 540px) {
+  .appform__row { grid-template-columns: 1fr 1fr; }
+}
+
+.appform__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.appform__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--n-60);
+  text-transform: uppercase;
+}
+.appform__req {
+  color: var(--hot);
+  font-weight: 900;
+  margin-left: 2px;
+}
+
+/* ---------- Inputs ---------- */
+.appform__input,
+.appform__textarea,
+.appform__select {
+  width: 100%;
+  background: rgba(0, 255, 231, 0.04);
+  border: 1px solid rgba(0, 255, 231, 0.2);
+  color: var(--neon);
+  font-family: var(--mono);
+  font-size: 16px;             /* 16px prevents iOS auto-zoom */
+  letter-spacing: 0.02em;
+  padding: 13px 14px;
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+  min-height: 48px;
+}
+.appform__input::placeholder,
+.appform__textarea::placeholder { color: rgba(0, 255, 231, 0.35); }
+
+.appform__input:focus,
+.appform__textarea:focus,
+.appform__select:focus {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.06);
+  box-shadow: 0 0 18px rgba(0, 255, 231, 0.2);
+}
+
+.appform__input.has-error,
+.appform__textarea.has-error,
+.appform__select-wrap.has-error {
+  border-color: var(--hot);
+  box-shadow: 0 0 14px rgba(255, 0, 102, 0.25);
+}
+
+/* ---------- Textarea ---------- */
+.appform__textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.5;
+  font-size: 0.92rem;
+}
+.appform__counter {
+  align-self: flex-end;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--n-45);
+  letter-spacing: 0.08em;
+  margin-top: -2px;
+}
+
+/* ---------- Select wrap (custom chevron) ---------- */
+.appform__select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 255, 231, 0.04);
+  border: 1px solid rgba(0, 255, 231, 0.2);
+  border-radius: 5px;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+}
+.appform__select-wrap:focus-within {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.06);
+  box-shadow: 0 0 18px rgba(0, 255, 231, 0.2);
+}
+.appform__select {
+  border: none;
+  background: transparent;
+  padding-right: 40px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.appform__select option {
+  background: var(--panel);
+  color: var(--neon);
+}
+.appform__select-ico {
+  position: absolute;
+  right: 14px;
+  pointer-events: none;
+  color: var(--neon);
+}
+
+/* ---------- City chip (read-only, pre-filled) ---------- */
+.appform__city-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 255, 231, 0.04);
+  border: 1px solid rgba(0, 255, 231, 0.2);
+  border-radius: 5px;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  color: var(--neon);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  min-height: 48px;
+}
+.appform__city-meta {
+  font-size: 0.66rem;
+  color: var(--n-45);
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+.appform__city-change {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 231, 0.25);
+  color: var(--n-60);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: none;
+  transition: all 0.2s;
+}
+.appform__city-change:hover {
+  border-color: var(--neon);
+  color: var(--neon);
+  background: rgba(0, 255, 231, 0.08);
+}
+@media (pointer: coarse) { .appform__city-change { cursor: pointer; } }
+
+/* ---------- Error message ---------- */
+.appform__err {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--hot);
+}
+.appform__err::before {
+  content: "✕ ";
+  font-weight: 700;
+}
+
+/* ---------- Submit button ---------- */
+.appform__submit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--neon-deep), var(--neon));
+  color: #021016;
+  border: none;
+  border-radius: 5px;
+  padding: 16px 22px;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
+  cursor: none;
+  box-shadow: 0 0 28px rgba(0, 255, 231, 0.4);
+  transition: transform 0.25s, box-shadow 0.25s, filter 0.25s;
+  margin-top: 6px;
+  min-height: 52px;
+}
+.appform__submit:hover:not(.is-disabled):not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 50px rgba(0, 255, 231, 0.7);
+}
+.appform__submit.is-disabled,
+.appform__submit:disabled {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+@media (pointer: coarse) {
+  .appform__submit { cursor: pointer; }
+  .appform__submit.is-disabled, .appform__submit:disabled { cursor: not-allowed; }
+}
+
+.appform__spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(2, 16, 22, 0.3);
+  border-top-color: #021016;
+  border-radius: 50%;
+  animation: appform-spin 0.7s linear infinite;
+}
+@keyframes appform-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Legal microcopy ---------- */
+.appform__legal {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: var(--n-45);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ---------- Server error banner ---------- */
+.appform__server-err {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--hot);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--hot) 35%, transparent);
+  background: color-mix(in srgb, var(--hot) 8%, transparent);
+  text-align: center;
+}
+.appform__server-err::before {
+  content: "// ERROR — ";
+  font-weight: 700;
+}
+
+/* ============================================================
+   Success view — promo code reveal
+   ============================================================ */
+.appform__success {
+  padding: clamp(28px, 5vw, 44px) clamp(20px, 4vw, 36px) clamp(24px, 4vw, 36px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  animation: appform-success-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes appform-success-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Check icon ---------- */
+.appform__success-ico {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(0, 255, 231, 0.08);
+  border: 1.5px solid rgba(0, 255, 231, 0.5);
+  display: grid;
+  place-items: center;
+  color: var(--neon);
+  box-shadow: 0 0 26px rgba(0, 255, 231, 0.3), inset 0 0 18px rgba(0, 255, 231, 0.06);
+  animation: appform-success-pulse 1.6s ease-in-out infinite;
+}
+@keyframes appform-success-pulse {
+  0%, 100% { box-shadow: 0 0 26px rgba(0, 255, 231, 0.3), inset 0 0 18px rgba(0, 255, 231, 0.06); }
+  50%      { box-shadow: 0 0 48px rgba(0, 255, 231, 0.65), inset 0 0 22px rgba(0, 255, 231, 0.12); }
+}
+
+/* ---------- Headline + subhead ---------- */
+.appform__success-title {
+  font-size: clamp(1.6rem, 4.4vw, 2.6rem);
+  letter-spacing: 0.06em;
+  color: var(--neon);
+  text-shadow:
+    0 0 14px rgba(0, 255, 231, 0.55),
+    0 0 36px rgba(0, 255, 231, 0.35),
+    0 0 60px rgba(0, 255, 231, 0.15);
+  animation: appform-success-glow 3s ease-in-out infinite;
+  margin: 4px 0 -2px;
+}
+@keyframes appform-success-glow {
+  0%, 100% { text-shadow: 0 0 14px rgba(0, 255, 231, 0.45), 0 0 36px rgba(0, 255, 231, 0.25); }
+  50%      { text-shadow: 0 0 22px rgba(0, 255, 231, 0.85), 0 0 50px rgba(0, 255, 231, 0.5); }
+}
+.appform__success-sub {
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  color: var(--n-60);
+}
+
+/* ---------- Code frame ---------- */
+.appform__code-frame {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  padding: 28px 18px 22px;
+  background:
+    radial-gradient(ellipse at center, rgba(0, 255, 231, 0.08), transparent 70%),
+    linear-gradient(180deg, rgba(0, 255, 231, 0.04), rgba(0, 255, 231, 0.02));
+  border: 1px solid rgba(0, 255, 231, 0.35);
+  border-radius: 8px;
+  box-shadow:
+    0 0 28px rgba(0, 255, 231, 0.18),
+    inset 0 0 24px rgba(0, 255, 231, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+.appform__code-corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  pointer-events: none;
+  animation: appform-corner-blink 2s ease-in-out infinite;
+}
+.appform__code-corner.tl { top: 6px; left: 6px; border-top: 1px solid var(--neon); border-left: 1px solid var(--neon); }
+.appform__code-corner.tr { top: 6px; right: 6px; border-top: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 0.5s; }
+.appform__code-corner.bl { bottom: 6px; left: 6px; border-bottom: 1px solid var(--neon); border-left: 1px solid var(--neon); animation-delay: 1s; }
+.appform__code-corner.br { bottom: 6px; right: 6px; border-bottom: 1px solid var(--neon); border-right: 1px solid var(--neon); animation-delay: 1.5s; }
+
+.appform__code-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--n-45);
+}
+.appform__code-eyebrow .sq {
+  width: 6px; height: 6px;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+}
+
+/* ---------- The huge glowing code itself ---------- */
+.appform__code-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.04em;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: clamp(1.7rem, 6.5vw, 2.9rem);
+  letter-spacing: 0.04em;
+  color: var(--neon);
+  text-shadow:
+    0 0 14px rgba(0, 255, 231, 0.7),
+    0 0 32px rgba(0, 255, 231, 0.4),
+    0 0 60px rgba(0, 255, 231, 0.18);
+  user-select: all;
+  word-break: break-all;
+  line-height: 1.1;
+}
+.appform__code-text.is-done {
+  animation: appform-code-settle 2.6s ease-in-out infinite 0.4s;
+}
+@keyframes appform-code-settle {
+  0%, 100% { text-shadow: 0 0 12px rgba(0, 255, 231, 0.55), 0 0 28px rgba(0, 255, 231, 0.3); }
+  50%      { text-shadow: 0 0 20px rgba(0, 255, 231, 0.85), 0 0 44px rgba(0, 255, 231, 0.5), 0 0 80px rgba(0, 255, 231, 0.18); }
+}
+.appform__code-ch {
+  display: inline-block;
+}
+.appform__code-ch.is-sep {
+  color: rgba(0, 255, 231, 0.55);
+  margin: 0 0.1em;
+}
+
+/* ---------- Copy button ---------- */
+.appform__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid rgba(0, 255, 231, 0.45);
+  color: var(--neon);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  padding: 9px 18px;
+  border-radius: 4px;
+  cursor: none;
+  min-height: 44px;
+  transition: border-color 0.25s, background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.2s;
+}
+.appform__copy:hover:not(:disabled) {
+  border-color: var(--neon);
+  background: rgba(0, 255, 231, 0.1);
+  box-shadow: 0 0 18px rgba(0, 255, 231, 0.3);
+  transform: translateY(-1px);
+}
+.appform__copy.is-copied {
+  border-color: var(--neon);
+  background: var(--neon);
+  color: #021016;
+  animation: appform-copied-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes appform-copied-pop {
+  0%   { transform: scale(0.9); }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@media (pointer: coarse) { .appform__copy { cursor: pointer; } }
+
+/* ---------- Instructions ---------- */
+.appform__success-help {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  color: var(--n-60);
+  max-width: 460px;
+  text-align: center;
+  margin: 4px 0;
+}
+
+/* ---------- CTA row ---------- */
+.appform__success-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.appform__success-primary {
+  min-width: 260px;
+  gap: 10px;
+}
+.appform__success-ghost {
+  background: transparent;
+  border: none;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--n-45);
+  cursor: none;
+  padding: 6px 8px;
+  transition: color 0.2s;
+}
+.appform__success-ghost:hover { color: var(--neon); }
+@media (pointer: coarse) { .appform__success-ghost { cursor: pointer; } }
+
+/* ---------- Mobile (full screen) ---------- */
+@media (max-width: 600px) {
+  .appform__panel {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .appform__head { padding: 56px 18px 14px; }
+  .appform__form { padding: 6px 18px 18px; gap: 14px; }
+  .appform__close { top: 14px; right: 14px; }
+  .appform__corner { display: none; }
+}
+
+/* Scrollbar inside form */
+.appform__form::-webkit-scrollbar { width: 6px; }
+.appform__form::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 231, 0.25);
+  border-radius: 3px;
+}
