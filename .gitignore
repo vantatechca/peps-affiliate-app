@@ -49,6 +49,11 @@ npm-debug.log*
 # Temporary files
 *.tmp
 .cache
+
+# Executables / binaries (don't commit tool binaries like gh.exe)
+bin/
+*.exe
+*.dll
+
 # Snyk Security Extension - AI Rules (auto-generated)
-.github\instructions\snyk_rules.instructions.md
-node_modules
+.github/instructions/snyk_rules.instructions.md
