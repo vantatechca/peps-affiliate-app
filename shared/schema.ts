@@ -614,6 +614,15 @@ export const promoCodes = pgTable("promo_codes", {
   applicationId: varchar("application_id").references(() => applications.id, { onDelete: 'set null' }),
   code: varchar("code").notNull().unique(),
   status: promoCodeStatusEnum("status").notNull().default('active'),
+  // Legacy migration fields (from the old peps_affiliate DiscountCode model).
+  // The old flat model carried the discount % and commission % on the code itself
+  // (rather than deriving commission from an offer). These are nullable so native
+  // PEP-XXXX-XXXX codes are unaffected. legacyCommissionRate is the *effective* rate
+  // resolved at migration time (code override ?? affiliate default ?? 0.20).
+  legacyDiscountPercent: decimal("legacy_discount_percent", { precision: 5, scale: 4 }),
+  legacyCommissionRate: decimal("legacy_commission_rate", { precision: 5, scale: 4 }),
+  legacyExpiresAt: timestamp("legacy_expires_at"),
+  legacyLabel: varchar("legacy_label"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -681,6 +690,101 @@ export const codeRedemptionsRelations = relations(codeRedemptions, ({ one }) => 
   vendor: one(vendorProfiles, {
     fields: [codeRedemptions.vendorId],
     references: [vendorProfiles.id],
+  }),
+}));
+
+// ============================================================
+// LEGACY peps_affiliate migration tables
+// ============================================================
+// These mirror the old peps_affiliate Order / OrderCommission / CommissionSplit
+// models 1:1 so the storefront integration (theme.liquid + pepscheckoutportal.com,
+// served via the /api/webhooks/* compatibility layer) behaves byte-for-byte like
+// the old backend. Unlike code_redemptions / affiliate_sales, legacy_orders does
+// NOT require an affiliate — 87% of historical orders had no discount code — so it
+// is the system of record for ALL orders (attributed or not). Attributed orders are
+// additionally projected into code_redemptions so they surface in the new dashboard.
+
+// Mirrors old "Order". promoCodeId is nullable (most orders have no code).
+export const legacyOrders = pgTable("legacy_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  externalOrderId: varchar("external_order_id"),
+  promoCodeId: varchar("promo_code_id").references(() => promoCodes.id, { onDelete: 'set null' }),
+  customerFirstName: varchar("customer_first_name").notNull(),
+  customerLastName: varchar("customer_last_name"),
+  itemsSummary: text("items_summary").notNull().default(''),
+  orderTotal: decimal("order_total", { precision: 12, scale: 2 }).notNull(),
+  commissionEarned: decimal("commission_earned", { precision: 12, scale: 2 }).notNull().default('0'),
+  attributed: boolean("attributed").notNull().default(false),
+  source: varchar("source").notNull().default('shopify'),
+  storeName: varchar("store_name"),
+  currency: varchar("currency", { length: 3 }).notNull().default('USD'),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_legacy_orders_external_id").on(table.externalOrderId),
+  index("idx_legacy_orders_promo_code").on(table.promoCodeId),
+  index("idx_legacy_orders_created_at").on(table.createdAt),
+]);
+
+// Mirrors old "OrderCommission" — per-recipient ledger row (source of truth for earnings).
+export const legacyOrderCommissions = pgTable("legacy_order_commissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => legacyOrders.id, { onDelete: 'cascade' }),
+  recipientUserId: varchar("recipient_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  sharePercent: decimal("share_percent", { precision: 6, scale: 5 }).notNull().default('1'),
+  payoutId: varchar("payout_id").references(() => creatorPayouts.id, { onDelete: 'set null' }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_legacy_order_commissions_order").on(table.orderId),
+  index("idx_legacy_order_commissions_recipient").on(table.recipientUserId),
+  index("idx_legacy_order_commissions_payout").on(table.payoutId),
+]);
+
+// Mirrors old "CommissionSplit" — per-code rule splitting commission among recipients.
+export const legacyCommissionSplits = pgTable("legacy_commission_splits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  promoCodeId: varchar("promo_code_id").notNull().references(() => promoCodes.id, { onDelete: 'cascade' }),
+  recipientUserId: varchar("recipient_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sharePercent: decimal("share_percent", { precision: 6, scale: 5 }).notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_legacy_commission_splits_promo_code").on(table.promoCodeId),
+  index("idx_legacy_commission_splits_recipient").on(table.recipientUserId),
+]);
+
+export const legacyOrdersRelations = relations(legacyOrders, ({ one, many }) => ({
+  promoCode: one(promoCodes, {
+    fields: [legacyOrders.promoCodeId],
+    references: [promoCodes.id],
+  }),
+  commissions: many(legacyOrderCommissions),
+}));
+
+export const legacyOrderCommissionsRelations = relations(legacyOrderCommissions, ({ one }) => ({
+  order: one(legacyOrders, {
+    fields: [legacyOrderCommissions.orderId],
+    references: [legacyOrders.id],
+  }),
+  recipient: one(users, {
+    fields: [legacyOrderCommissions.recipientUserId],
+    references: [users.id],
+  }),
+  payout: one(creatorPayouts, {
+    fields: [legacyOrderCommissions.payoutId],
+    references: [creatorPayouts.id],
+  }),
+}));
+
+export const legacyCommissionSplitsRelations = relations(legacyCommissionSplits, ({ one }) => ({
+  promoCode: one(promoCodes, {
+    fields: [legacyCommissionSplits.promoCodeId],
+    references: [promoCodes.id],
+  }),
+  recipient: one(users, {
+    fields: [legacyCommissionSplits.recipientUserId],
+    references: [users.id],
   }),
 }));
 

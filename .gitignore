@@ -25,6 +25,7 @@ database-export-*.json
 database-dump.sql
 *.sql
 !db/migrations/*.sql
+!migrations/*.sql
 
 # OS files
 .DS_Store

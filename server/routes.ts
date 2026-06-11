@@ -7,6 +7,7 @@ import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./localAuth";
 import { registerAffexchRoutes } from "./affexchRoutes";
+import { registerLegacyCompatRoutes } from "./legacyCompatRoutes";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { db } from "./db";
 import { offerVideos, applications, analytics, offers, vendorProfiles, payments, retainerPayments, conversations, messages, bannedKeywords, contentFlags, companyInvoices } from "../shared/schema";
@@ -116,6 +117,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AFFEXCH peptide pivot — Phase 4 endpoints (promo code, content links, tier)
   registerAffexchRoutes(app);
+
+  // Legacy peps_affiliate storefront compatibility layer (/api/webhooks/*)
+  registerLegacyCompatRoutes(app);
 
   // Initialize notification service
   const notificationService = new NotificationService(storage);
