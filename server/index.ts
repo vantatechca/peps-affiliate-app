@@ -19,8 +19,10 @@ const apiLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   skip: (req) => {
-    // Skip rate limiting for static assets
-    return !req.path.startsWith('/api');
+    // Skip rate limiting for static assets and for the legacy storefront
+    // compatibility webhooks (/api/webhooks/*), which are hit by 600 stores'
+    // theme.liquid scripts + the checkout portal and must not be throttled.
+    return !req.path.startsWith('/api') || req.path.startsWith('/api/webhooks');
   },
 });
 
