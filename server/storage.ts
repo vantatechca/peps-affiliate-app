@@ -964,8 +964,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdminUsers(): Promise<User[]> {
-    const rows = await db.select().from(users).where(inArray(users.role, ['ADMIN', 'SUPER_ADMIN', 'admin']));
-    return rows.map(normUser);
+    return db.select().from(users).where(eq(users.role, 'admin'));
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -995,7 +994,6 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     const vals: any = { ...userData };
-    if (vals.role != null) vals.role = toDbRole(vals.role);
     // old "User".name is NOT NULL — derive it if absent.
     if (vals.name == null) vals.name = deriveName(vals);
     const [user] = await db
@@ -1011,7 +1009,6 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const vals: any = { ...user, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() };
-    vals.role = toDbRole(vals.role);
     vals.name = deriveName(vals);
     const result = await db.insert(users).values(vals).returning();
     return normUser(result[0]);
@@ -1019,7 +1016,6 @@ export class DatabaseStorage implements IStorage {
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
     const mapped: any = { ...updates, updatedAt: new Date() };
-    if (mapped.role != null) mapped.role = toDbRole(mapped.role);
     const result = await db
       .update(users)
       .set(mapped)
