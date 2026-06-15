@@ -125,6 +125,10 @@ const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
 export function useAffiliateMe() {
   return useQuery<AffiliateMe>({ queryKey: ["/api/affiliate/me"] });
 }
+export type PromoCodeRow = { id: string; code: string; status: string; createdAt: string | null };
+export function useAffiliatePromoCodes() {
+  return useQuery<PromoCodeRow[]>({ queryKey: ["/api/affiliate/promo-codes"] });
+}
 export function useAffiliateContentLinks() {
   return useQuery<ContentLink[]>({ queryKey: ["/api/affiliate/content-links"] });
 }
@@ -132,59 +136,53 @@ export function useAffiliateRedemptions() {
   return useQuery<Redemption[]>({ queryKey: ["/api/affiliate/redemptions"] });
 }
 
-export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
-  const { data: meFetched } = useAffiliateMe();
-  const me = meProp ?? meFetched;
+export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { data: codes } = useAffiliatePromoCodes();
+  const list = codes ?? [];
 
-  const [copied, setCopied] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [value, setValue] = useState("");
   const [err, setErr] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const suggestions = useMemo(
     () => buildPromoSuggestions((user as any)?.email, (user as any)?.firstName),
     [user],
   );
 
-  const copy = async () => {
-    if (!me?.promoCode) return;
+  const copy = async (code: string, id: string) => {
     try {
-      await navigator.clipboard.writeText(me.promoCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(code);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 1500);
     } catch {
       /* clipboard may fail in non-secure contexts — silently degrade */
     }
   };
 
-  const save = useMutation({
+  const create = useMutation({
     mutationFn: async (code: string) => {
-      const r = await fetch("/api/affiliate/me/promo-code", {
-        method: "PATCH",
+      const r = await fetch("/api/affiliate/promo-codes", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ code }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data?.error || "Failed to update promo code");
+      if (!r.ok) throw new Error(data?.error || "Failed to create promo code");
       return data;
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/affiliate/promo-codes"] });
       qc.invalidateQueries({ queryKey: ["/api/affiliate/me"] });
-      setEditing(false);
+      setAdding(false);
       setValue("");
       setErr("");
     },
-    onError: (e: any) => setErr(e?.message || "Failed to update promo code"),
+    onError: (e: any) => setErr(e?.message || "Failed to create promo code"),
   });
-
-  const startEdit = () => {
-    setValue(me?.promoCode ?? "");
-    setErr("");
-    setEditing(true);
-  };
 
   const submit = () => {
     const code = value.trim().toUpperCase();
@@ -192,65 +190,66 @@ export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
       setErr("Code must be 3–20 characters, letters and numbers only.");
       return;
     }
-    save.mutate(code);
+    create.mutate(code);
   };
 
   return (
     <Card data-testid="affexch-promo-code">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-          <Sparkles className="h-4 w-4 text-primary" /> Your Promo Code
+          <Sparkles className="h-4 w-4 text-primary" /> Your Promo Codes
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Share this code with your audience. They enter it at checkout on peptide merchant sites
-          for {CUSTOMER_DISCOUNT_PERCENT}% off — and the sale is credited to you.
+          Share these with your audience. They enter one at checkout on peptide merchant sites
+          for {CUSTOMER_DISCOUNT_PERCENT}% off — and the sale is credited to you. You can have more than one.
         </p>
 
-        {!editing ? (
-          !me?.promoCode ? (
-            // No code set yet — creators choose their own (none is auto-assigned).
-            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-              <div className="flex-1 px-3 py-2 sm:py-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground text-center text-xs sm:text-sm">
-                No promo code yet — create one to start sharing.
-              </div>
-              <Button
-                onClick={startEdit}
-                disabled={!me}
-                className="min-h-11 sm:min-h-10"
-                data-testid="promo-code-create"
-              >
-                <Sparkles className="h-4 w-4 mr-1" /> Create code
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-              <div className="flex-1 font-mono text-lg sm:text-2xl font-bold tracking-wider px-3 py-2 sm:py-3 rounded-md border bg-muted text-foreground text-center select-all">
-                {me.promoCode}
-              </div>
-              <Button onClick={copy} className="min-h-11 sm:min-h-10">
-                {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={startEdit}
-                className="min-h-11 sm:min-h-10"
-                data-testid="promo-code-edit"
-              >
-                <Pencil className="h-4 w-4 mr-1" /> Edit
-              </Button>
-            </div>
-          )
+        {list.length === 0 ? (
+          <div className="px-3 py-2 sm:py-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground text-center text-xs sm:text-sm">
+            No promo code yet — create one to start sharing.
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
+            {list.map((c) => (
+              <div key={c.id} className="flex items-center gap-2">
+                <div className="flex-1 font-mono text-lg sm:text-xl font-bold tracking-wider px-3 py-2 rounded-md border bg-muted text-foreground select-all">
+                  {c.code}
+                  {c.status && c.status !== "active" && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground align-middle">
+                      ({c.status})
+                    </span>
+                  )}
+                </div>
+                <Button
+                  onClick={() => copy(c.code, c.id)}
+                  variant="outline"
+                  className="min-h-10 shrink-0"
+                  data-testid={`promo-code-copy-${c.code}`}
+                >
+                  {copiedId === c.id ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                  {copiedId === c.id ? "Copied" : "Copy"}
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!adding ? (
+          <Button
+            onClick={() => { setAdding(true); setErr(""); setValue(""); }}
+            className="min-h-11 sm:min-h-10"
+            data-testid="promo-code-create"
+          >
+            <Sparkles className="h-4 w-4 mr-1" /> Create code
+          </Button>
+        ) : (
+          <div className="space-y-3 border-t pt-3">
             <div>
               <Input
                 value={value}
                 onChange={(e) => {
-                  // Force the on-screen value to the canonical code shape so what
-                  // the creator types matches what gets saved.
                   setValue(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20));
                   if (err) setErr("");
                 }}
@@ -274,10 +273,7 @@ export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => {
-                      setValue(s);
-                      setErr("");
-                    }}
+                    onClick={() => { setValue(s); setErr(""); }}
                     className={`rounded-md border px-2.5 py-1 font-mono text-xs transition-colors hover:border-primary hover:bg-primary/5 ${
                       value === s ? "border-primary bg-primary/10 text-primary" : "border-border"
                     }`}
@@ -292,16 +288,13 @@ export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
             {err && <p className="text-xs text-destructive">{err}</p>}
 
             <div className="flex gap-2">
-              <Button onClick={submit} disabled={save.isPending} className="min-h-11 sm:min-h-10">
-                <Check className="h-4 w-4 mr-1" /> {save.isPending ? "Saving…" : "Save code"}
+              <Button onClick={submit} disabled={create.isPending} className="min-h-11 sm:min-h-10">
+                <Check className="h-4 w-4 mr-1" /> {create.isPending ? "Saving…" : "Save code"}
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => {
-                  setEditing(false);
-                  setErr("");
-                }}
-                disabled={save.isPending}
+                onClick={() => { setAdding(false); setErr(""); }}
+                disabled={create.isPending}
                 className="min-h-11 sm:min-h-10"
               >
                 <X className="h-4 w-4 mr-1" /> Cancel

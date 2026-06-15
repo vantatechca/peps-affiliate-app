@@ -6,7 +6,7 @@ import { db, pool } from "./db";
 import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, communityChatMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
 import { eq, and, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
-import { getCreatorPromoCode, setCreatorPromoCode } from "./affexchPromoCode";
+import { getCreatorPromoCode, setCreatorPromoCode, listCreatorPromoCodes, createCreatorPromoCode } from "./affexchPromoCode";
 import { NotificationService } from "./notifications/notificationService";
 import { storage } from "./storage";
 
@@ -271,6 +271,41 @@ export function registerAffexchRoutes(app: Express) {
       const status = err?.statusCode ?? 500;
       if (status === 500) console.error("[AFFEXCH] /me/promo-code PATCH error:", err);
       res.status(status).json({ error: err?.message || "Failed to update promo code" });
+    }
+  });
+
+  // GET /api/affiliate/promo-codes — list ALL of the creator's codes (multiple allowed).
+  app.get("/api/affiliate/promo-codes", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const codes = await listCreatorPromoCodes(user.id);
+      res.json(codes);
+    } catch (err: any) {
+      console.error("[AFFEXCH] promo-codes GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to list promo codes" });
+    }
+  });
+
+  // POST /api/affiliate/promo-codes — create an ADDITIONAL code (does not replace).
+  app.post("/api/affiliate/promo-codes", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const { code } = req.body ?? {};
+      if (typeof code !== "string") {
+        return res.status(400).json({ error: "Code is required" });
+      }
+      const created = await createCreatorPromoCode(user.id, code);
+      res.json({ code: created });
+    } catch (err: any) {
+      const status = err?.statusCode ?? 500;
+      if (status === 500) console.error("[AFFEXCH] promo-codes POST error:", err);
+      res.status(status).json({ error: err?.message || "Failed to create promo code" });
     }
   });
 
