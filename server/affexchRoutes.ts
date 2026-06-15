@@ -672,16 +672,11 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // POST /api/admin/merchants — manually add a single merchant + first offer.
-  // Reuses the same validation + upsert pattern as the CSV importer so the
-  // outcomes are identical (same vendor/offer columns, same defaults).
+  // POST /api/admin/merchants — manually add a single peptide merchant.
+  // No offer is created here; merchants start with no offers.
   app.post("/api/admin/merchants", isAuthenticated, requireAdmin, async (req: Request, res) => {
     try {
       const str = (v: any, max = 200) => (typeof v === "string" ? v.trim().slice(0, max) : "");
-      const num = (v: any) => {
-        const n = parseFloat(String(v));
-        return Number.isFinite(n) ? n : NaN;
-      };
 
       const legalName = str(req.body?.legalName, 200);
       const tradeName = str(req.body?.tradeName, 200) || legalName;
@@ -689,108 +684,51 @@ export function registerAffexchRoutes(app: Express) {
       const country = (str(req.body?.country, 4) || "US").toUpperCase();
       const website = str(req.body?.website, 300);
       const neighborhood = str(req.body?.neighborhood, 120);
-      const peptideName = str(req.body?.peptideName, 80);
-      const priceUsd = num(req.body?.priceUsd);
-      const commissionPct = Number.isFinite(num(req.body?.commissionPct))
-        ? num(req.body?.commissionPct)
-        : 20;
 
       if (!legalName) return res.status(400).json({ error: "Legal name is required" });
       if (!city) return res.status(400).json({ error: "City is required" });
-      if (!peptideName) return res.status(400).json({ error: "Peptide name is required" });
-      if (!Number.isFinite(priceUsd) || priceUsd <= 0) {
-        return res.status(400).json({ error: "Price must be a positive number" });
-      }
-      if (commissionPct < 0 || commissionPct > 100) {
-        return res.status(400).json({ error: "Commission % must be between 0 and 100" });
-      }
 
-      // Reuse-or-create vendor
-      let existing = await db
+      // Merchants are created without any offer, so a same-named merchant has
+      // nothing to append to — reject the duplicate instead of upserting.
+      const existing = await db
         .select({ id: vendorProfiles.id })
         .from(vendorProfiles)
         .where(eq(vendorProfiles.legalName, legalName))
         .limit(1);
-
-      let vendorId: string;
-      let reused = false;
       if (existing.length > 0) {
-        vendorId = existing[0].id;
-        reused = true;
-      } else {
-        const stubUserId = randomUUID();
-        const slug = legalName.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 40);
-        await pool.query(
-          `INSERT INTO users
-             (id, username, email, password, role, account_status, email_verified,
-              first_name, tos_accepted_at, privacy_accepted_at, created_at, updated_at)
-           VALUES ($1, $2, $3, NULL, 'merchant', 'active', true, $4, NOW(), NOW(), NOW(), NOW())`,
-          [
-            stubUserId,
-            `merchant_${slug}_${Date.now()}`,
-            `merchant-${slug}-${Date.now()}@affexch.local`,
-            tradeName.slice(0, 80),
-          ],
-        );
-
-        vendorId = randomUUID();
-        const description = neighborhood
-          ? `Peptide merchant in ${neighborhood}, ${city}. Added manually by admin.`
-          : `Peptide merchant in ${city}. Added manually by admin.`;
-        await pool.query(
-          `INSERT INTO vendor_profiles
-             (id, user_id, legal_name, trade_name, industry, website_url, description,
-              city, country, status, website_verified, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 'Peptides & Wellness', $5, $6, $7, $8, 'approved', false, NOW(), NOW())`,
-          [vendorId, stubUserId, legalName, tradeName, website || null, description, city, country],
-        );
+        return res.status(409).json({ error: "A merchant with that legal name already exists" });
       }
 
-      // Insert the offer
-      const offerId = randomUUID();
-      const offerSlug = `${peptideName}-${tradeName}-${vendorId.slice(0, 8)}`
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .slice(0, 200);
-      const commissionDetails = JSON.stringify({ type: "promo_code", percentage: commissionPct });
-      const title = `${peptideName} — ${tradeName}`.slice(0, 100);
-      const shortDescription = `${peptideName} from ${tradeName} in ${city}.`.slice(0, 200);
-      const fullDescription =
-        `Promote ${peptideName} from ${tradeName} (${city}). Customers redeem ` +
-        `your PEP-XXXX-XXXX promo code at checkout for a discount, and you ` +
-        `earn ${commissionPct}% commission.`;
-
+      const stubUserId = randomUUID();
+      const slug = legalName.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 40);
       await pool.query(
-        `INSERT INTO offers
-           (id, vendor_id, title, product_name, short_description, full_description,
-            primary_niche, product_url, commission_type, commission_percentage,
-            average_order_value, status, slug, commission_details, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, 'wellness', $7, 'promo_code', $8, $9,
-                 'approved', $10, $11::jsonb, NOW(), NOW())`,
+        `INSERT INTO users
+           (id, username, email, password, role, account_status, email_verified,
+            first_name, tos_accepted_at, privacy_accepted_at, created_at, updated_at)
+         VALUES ($1, $2, $3, NULL, 'merchant', 'active', true, $4, NOW(), NOW(), NOW(), NOW())`,
         [
-          offerId,
-          vendorId,
-          title,
-          peptideName,
-          shortDescription,
-          fullDescription,
-          website || `https://${tradeName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.example`,
-          commissionPct.toFixed(2),
-          priceUsd.toFixed(2),
-          offerSlug,
-          commissionDetails,
+          stubUserId,
+          `merchant_${slug}_${Date.now()}`,
+          `merchant-${slug}-${Date.now()}@affexch.local`,
+          tradeName.slice(0, 80),
         ],
       );
 
-      await writeAudit(req, reused ? "add_offer_to_merchant" : "add_merchant", "merchant", vendorId, {
-        legalName,
-        peptideName,
-        priceUsd,
-        commissionPct,
-        offerId,
-      });
+      const vendorId = randomUUID();
+      const description = neighborhood
+        ? `Peptide merchant in ${neighborhood}, ${city}. Added manually by admin.`
+        : `Peptide merchant in ${city}. Added manually by admin.`;
+      await pool.query(
+        `INSERT INTO vendor_profiles
+           (id, user_id, legal_name, trade_name, industry, website_url, description,
+            city, country, status, website_verified, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'Peptides & Wellness', $5, $6, $7, $8, 'approved', false, NOW(), NOW())`,
+        [vendorId, stubUserId, legalName, tradeName, website || null, description, city, country],
+      );
 
-      res.json({ ok: true, vendorId, offerId, reused });
+      await writeAudit(req, "add_merchant", "merchant", vendorId, { legalName, city });
+
+      res.json({ ok: true, vendorId });
     } catch (err: any) {
       console.error("[AFFEXCH] add merchant error:", err);
       res.status(500).json({ error: err?.message || "Failed to add merchant" });
