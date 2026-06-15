@@ -40,8 +40,6 @@ import CreatorDashboard from "./pages/creator-dashboard";
 import CreatorPromoCodePage from "./pages/creator-promo-code";
 import CreatorSalesPage from "./pages/creator-sales";
 import CreatorMilestonePage from "./pages/creator-milestone";
-import CreatorLinksPage from "./pages/creator-links";
-import CreatorSubmitLinkPage from "./pages/creator-submit-link";
 import CreatorGuidesPage from "./pages/creator-guides";
 import CreatorPayoutsPage from "./pages/creator-payouts";
 import AdminPayoutsPage from "./pages/admin-payouts";
@@ -305,8 +303,6 @@ function ProtectedRouter() {
               <Route path="/creator/promo-code" component={CreatorPromoCodePage} />
               <Route path="/creator/sales" component={CreatorSalesPage} />
               <Route path="/creator/milestone" component={CreatorMilestonePage} />
-              <Route path="/creator/links" component={CreatorLinksPage} />
-              <Route path="/creator/submit-link" component={CreatorSubmitLinkPage} />
               <Route path="/creator/payouts" component={CreatorPayoutsPage} />
               <Route path="/creator/guides" component={CreatorGuidesPage} />
               <Route path="/help/affiliate-marketing-tips" component={HelpAffiliateMarketingTips} />
@@ -317,7 +313,7 @@ function ProtectedRouter() {
                   revision; send users back to the dashboard if they hit them */}
               <Route path="/browse">{() => { window.location.replace("/"); return null; }}</Route>
               <Route path="/offers">{() => { window.location.replace("/"); return null; }}</Route>
-              <Route path="/applications">{() => { window.location.replace("/creator/links"); return null; }}</Route>
+              <Route path="/applications">{() => { window.location.replace("/"); return null; }}</Route>
               <Route path="/analytics">{() => { window.location.replace("/creator/sales"); return null; }}</Route>
               <Route path="/favorites">{() => { window.location.replace("/"); return null; }}</Route>
               <Route path="/messages">{() => { window.location.replace("/"); return null; }}</Route>

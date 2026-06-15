@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import { GenericErrorDialog } from "../components/GenericErrorDialog";
 import { Card, CardContent } from "../components/ui/card";
@@ -39,20 +38,8 @@ const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
   elite: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950 dark:text-fuchsia-400 dark:border-fuchsia-800",
 };
 
-type DashboardOffer = {
-  id: string;
-  business: string;
-  peptide: string;
-  neighborhood: string | null;
-  city: string | null;
-  country: string | null;
-  price: string;
-  earn: string;
-  badge: string;
-};
-
 // AFFEXCH creator dashboard hub.
-//   - Stat strip + promo code + sales chart + local peptide offers near saved city
+//   - Stat strip + promo code + sales chart
 //   - No tours, no tutorials, no redundant action tiles (sidebar covers those)
 export default function CreatorDashboard() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -81,21 +68,6 @@ export default function CreatorDashboard() {
   // Build a 14-day earnings series for the dashboard chart.
   const chartData = useMemo(() => buildEarningsSeries(redemptions ?? [], 14), [redemptions]);
   const hasEarnings = chartData.some((d) => d.earnings > 0);
-
-  // Fetch local peptide vendors for the creator's saved city.
-  const { data: localOffers } = useQuery<DashboardOffer[]>({
-    queryKey: ["/api/affiliate/offers", { city, limit: 4 }],
-    queryFn: async () => {
-      const url = city
-        ? `/api/affiliate/offers?city=${encodeURIComponent(city)}&limit=4`
-        : `/api/affiliate/offers?limit=4`;
-      const r = await fetch(url, { credentials: "include" });
-      if (!r.ok) throw new Error("offers fetch failed");
-      return r.json();
-    },
-    enabled: isAuthenticated,
-    staleTime: 60_000,
-  });
 
   if (isLoading) {
     return <AffexchBootLoader />;
@@ -134,7 +106,7 @@ export default function CreatorDashboard() {
             label="Approved links"
             value={<span className="text-xl sm:text-2xl font-bold">{approved}</span>}
             hint={pending > 0 ? `${pending} pending review` : "No pending submissions"}
-            href="/creator/links"
+            href="/creator/milestone"
           />
           <StatCard
             icon={TrendingUp}
@@ -238,40 +210,6 @@ export default function CreatorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Offers near city */}
-        <div>
-          <div className="mb-2 sm:mb-3">
-            <div>
-              <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                {city ? `Offers near ${city}` : "Top peptide offers"}
-              </h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {city
-                  ? `Local peptide merchants in ${city}`
-                  : "Popular peptide merchants across the network"}
-              </p>
-            </div>
-          </div>
-
-          {!localOffers || localOffers.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <MapPin className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No peptide merchants to show yet.</p>
-                <p className="text-[11px] text-muted-foreground/70 mt-1">
-                  We'll surface 4 closest local businesses once merchants are seeded for your city.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 fx-stagger fx-cards">
-              {localOffers.slice(0, 4).map((o, i) => (
-                <OfferCard key={o.id ?? i} offer={o} index={i} />
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       <GenericErrorDialog
@@ -312,38 +250,6 @@ function StatCard({
         </Card>
       </a>
     </Link>
-  );
-}
-
-function OfferCard({ offer: o, index: i }: { offer: DashboardOffer; index: number }) {
-  return (
-    <Card className="fx-card fx-card-scan h-full">
-      <CardContent className="p-3 sm:p-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono text-muted-foreground">
-            NO_{String(i + 1).padStart(3, "0")}
-          </span>
-          <Badge className="text-[10px] bg-primary/15 text-primary border-primary/30">
-            {o.badge || "20%"}
-          </Badge>
-        </div>
-        <div>
-          <h3 className="font-semibold text-sm truncate" title={o.business}>
-            {o.business}
-          </h3>
-          <p className="text-[11px] text-muted-foreground truncate">{o.peptide}</p>
-          {(o.neighborhood || o.city) && (
-            <p className="text-[10px] text-muted-foreground/80 mt-0.5 font-mono truncate">
-              // {[o.neighborhood, o.city].filter(Boolean).join(", ")}
-            </p>
-          )}
-        </div>
-        <div className="flex items-end justify-between pt-2 border-t">
-          <span className="text-sm font-semibold">{o.price || "—"}</span>
-          <span className="text-xs font-mono text-primary">{o.earn || ""}</span>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

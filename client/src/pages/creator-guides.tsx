@@ -40,8 +40,8 @@ export default function CreatorGuidesPage() {
             <Step
               n={2}
               icon={Send}
-              title="Post + submit"
-              body="Post a video / story / image that includes your code, then submit the URL on Submit a Link."
+              title="Post your content"
+              body="Post a video / story / image that includes your code so your audience can redeem it at checkout."
             />
             <Step
               n={3}
@@ -106,10 +106,6 @@ export default function CreatorGuidesPage() {
           <Faq
             q="How do I get paid?"
             a="Commissions accrue against your account. Payout method is being finalised — we'll notify you in-app once it's wired."
-          />
-          <Faq
-            q="What if my link gets rejected?"
-            a="Check the rejection reason on My Links. Fix the issue and resubmit. Common fix: make sure your code is visible in the caption."
           />
         </CardContent>
       </Card>
