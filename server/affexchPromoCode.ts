@@ -4,7 +4,7 @@
 // on collision (vanishingly rare with 32^8 = ~1.1T codes).
 import { db } from "./db";
 import { promoCodes } from "../shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { randomInt } from "crypto";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -82,6 +82,38 @@ export async function setCreatorPromoCode(creatorId: string, rawCode: string): P
     return code;
   } catch (err: any) {
     // 23505 = unique_violation — another creator already owns this code
+    if (err?.code === "23505") {
+      const e: any = new Error("That code is already taken. Try a different one.");
+      e.statusCode = 409;
+      throw e;
+    }
+    throw err;
+  }
+}
+
+/** List ALL of a creator's promo codes (the old DiscountCode model allows many). */
+export async function listCreatorPromoCodes(creatorId: string) {
+  return db
+    .select({ id: promoCodes.id, code: promoCodes.code, status: promoCodes.status, createdAt: promoCodes.createdAt })
+    .from(promoCodes)
+    .where(eq(promoCodes.creatorId, creatorId))
+    .orderBy(desc(promoCodes.createdAt));
+}
+
+/** Create an ADDITIONAL promo code for the creator (does not replace existing). */
+export async function createCreatorPromoCode(creatorId: string, rawCode: string): Promise<string> {
+  const code = String(rawCode ?? "").trim().toUpperCase();
+  if (!CUSTOM_CODE_RE.test(code)) {
+    const e: any = new Error("Code must be 3–20 characters, letters and numbers only.");
+    e.statusCode = 400;
+    throw e;
+  }
+  try {
+    // 0.1000 = 10% customer discount (matches existing codes); commission uses
+    // the affiliate's default rate (commissionRateOverride left null).
+    await db.insert(promoCodes).values({ creatorId, code, status: "active", legacyDiscountPercent: "0.1000" } as any);
+    return code;
+  } catch (err: any) {
     if (err?.code === "23505") {
       const e: any = new Error("That code is already taken. Try a different one.");
       e.statusCode = 409;
