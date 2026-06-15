@@ -112,37 +112,41 @@ export const sessions = pgTable(
 );
 
 // User storage table
-export const users = pgTable("users", {
+// CUTOVER: mapped to the OLD shared "User" table. DB column names match the
+// old Prisma camelCase + the additive columns from migrations/old-db-prep.
+// `password` reuses the old `passwordHash`; `role` holds the old enum values
+// (AFFILIATE/ADMIN/SUPER_ADMIN) — mapped to app roles in app code.
+export const users = pgTable("User", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: varchar("username").unique().notNull(),
   email: varchar("email").unique().notNull(),
-  password: varchar("password"),
-  googleId: varchar("google_id").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  role: userRoleEnum("role").notNull().default('creator'),
-  accountStatus: userAccountStatusEnum("account_status").notNull().default('active'),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  emailVerificationToken: varchar("email_verification_token"),
-  emailVerificationTokenExpiry: timestamp("email_verification_token_expiry"),
-  passwordResetToken: varchar("password_reset_token"),
-  passwordResetTokenExpiry: timestamp("password_reset_token_expiry"),
-  accountDeletionOtp: varchar("account_deletion_otp"),
-  accountDeletionOtpExpiry: timestamp("account_deletion_otp_expiry"),
-  passwordChangeOtp: varchar("password_change_otp"),
-  passwordChangeOtpExpiry: timestamp("password_change_otp_expiry"),
+  password: varchar("passwordHash"),
+  googleId: varchar("googleId").unique(),
+  firstName: varchar("firstName"),
+  lastName: varchar("lastName"),
+  profileImageUrl: varchar("profileImageUrl"),
+  role: varchar("role").notNull().default('AFFILIATE'),
+  accountStatus: varchar("accountStatus").notNull().default('active'),
+  emailVerified: boolean("emailVerified").notNull().default(false),
+  emailVerificationToken: varchar("emailVerificationToken"),
+  emailVerificationTokenExpiry: timestamp("emailVerificationTokenExpiry"),
+  passwordResetToken: varchar("passwordResetToken"),
+  passwordResetTokenExpiry: timestamp("passwordResetTokenExpiry"),
+  accountDeletionOtp: varchar("accountDeletionOtp"),
+  accountDeletionOtpExpiry: timestamp("accountDeletionOtpExpiry"),
+  passwordChangeOtp: varchar("passwordChangeOtp"),
+  passwordChangeOtpExpiry: timestamp("passwordChangeOtpExpiry"),
   // Two-Factor Authentication fields
-  twoFactorSecret: varchar("two_factor_secret", { length: 64 }),
-  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
-  twoFactorBackupCodes: text("two_factor_backup_codes"), // JSON array of hashed backup codes
+  twoFactorSecret: varchar("twoFactorSecret", { length: 64 }),
+  twoFactorEnabled: boolean("twoFactorEnabled").notNull().default(false),
+  twoFactorBackupCodes: text("twoFactorBackupCodes"), // JSON array of hashed backup codes
   // Terms and Privacy acceptance
-  tosAcceptedAt: timestamp("tos_accepted_at"),
-  privacyAcceptedAt: timestamp("privacy_accepted_at"),
+  tosAcceptedAt: timestamp("tosAcceptedAt"),
+  privacyAcceptedAt: timestamp("privacyAcceptedAt"),
   // Cookie consent
-  cookieConsentAt: timestamp("cookie_consent_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  cookieConsentAt: timestamp("cookieConsentAt"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -608,32 +612,26 @@ export const affiliateSalesRelations = relations(affiliateSales, ({ one }) => ({
 
 // Promo codes — one PEP-XXXX-XXXX code per affiliate, generated at registration
 // applicationId is nullable because the code is minted before any offer application exists
-export const promoCodes = pgTable("promo_codes", {
+// CUTOVER: mapped to the OLD shared "DiscountCode" table.
+//   creatorId    -> affiliateId
+//   discount/commission -> discountPercent / commissionRateOverride
+//   status       -> new additive column (old `active` flag stays for old system)
+export const promoCodes = pgTable("DiscountCode", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  applicationId: varchar("application_id").references(() => applications.id, { onDelete: 'set null' }),
+  creatorId: varchar("affiliateId").notNull().references(() => users.id, { onDelete: 'cascade' }),
   code: varchar("code").notNull().unique(),
-  status: promoCodeStatusEnum("status").notNull().default('active'),
-  // Legacy migration fields (from the old peps_affiliate DiscountCode model).
-  // The old flat model carried the discount % and commission % on the code itself
-  // (rather than deriving commission from an offer). These are nullable so native
-  // PEP-XXXX-XXXX codes are unaffected. legacyCommissionRate is the *effective* rate
-  // resolved at migration time (code override ?? affiliate default ?? 0.20).
-  legacyDiscountPercent: decimal("legacy_discount_percent", { precision: 5, scale: 4 }),
-  legacyCommissionRate: decimal("legacy_commission_rate", { precision: 5, scale: 4 }),
-  legacyExpiresAt: timestamp("legacy_expires_at"),
-  legacyLabel: varchar("legacy_label"),
-  createdAt: timestamp("created_at").defaultNow(),
+  status: varchar("status").notNull().default('active'),
+  legacyDiscountPercent: decimal("discountPercent", { precision: 5, scale: 4 }),
+  legacyCommissionRate: decimal("commissionRateOverride", { precision: 5, scale: 4 }),
+  legacyExpiresAt: timestamp("expiresAt"),
+  legacyLabel: varchar("label"),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
 export const promoCodesRelations = relations(promoCodes, ({ one, many }) => ({
   creator: one(users, {
     fields: [promoCodes.creatorId],
     references: [users.id],
-  }),
-  application: one(applications, {
-    fields: [promoCodes.applicationId],
-    references: [applications.id],
   }),
   redemptions: many(codeRedemptions),
 }));
@@ -705,54 +703,47 @@ export const codeRedemptionsRelations = relations(codeRedemptions, ({ one }) => 
 // additionally projected into code_redemptions so they surface in the new dashboard.
 
 // Mirrors old "Order". promoCodeId is nullable (most orders have no code).
-export const legacyOrders = pgTable("legacy_orders", {
+// CUTOVER: mapped to the OLD shared "Order" table (system of record for sales).
+//   promoCodeId -> discountCodeId
+export const legacyOrders = pgTable("Order", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  externalOrderId: varchar("external_order_id"),
-  promoCodeId: varchar("promo_code_id").references(() => promoCodes.id, { onDelete: 'set null' }),
-  customerFirstName: varchar("customer_first_name").notNull(),
-  customerLastName: varchar("customer_last_name"),
-  itemsSummary: text("items_summary").notNull().default(''),
-  orderTotal: decimal("order_total", { precision: 12, scale: 2 }).notNull(),
-  commissionEarned: decimal("commission_earned", { precision: 12, scale: 2 }).notNull().default('0'),
+  externalOrderId: varchar("externalOrderId"),
+  promoCodeId: varchar("discountCodeId").references(() => promoCodes.id, { onDelete: 'set null' }),
+  customerFirstName: varchar("customerFirstName").notNull(),
+  customerLastName: varchar("customerLastName"),
+  itemsSummary: text("itemsSummary").notNull().default(''),
+  orderTotal: decimal("orderTotal", { precision: 12, scale: 2 }).notNull(),
+  commissionEarned: decimal("commissionEarned", { precision: 12, scale: 2 }).notNull().default('0'),
   attributed: boolean("attributed").notNull().default(false),
   source: varchar("source").notNull().default('shopify'),
-  storeName: varchar("store_name"),
+  storeName: varchar("storeName"),
   currency: varchar("currency", { length: 3 }).notNull().default('USD'),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_legacy_orders_external_id").on(table.externalOrderId),
-  index("idx_legacy_orders_promo_code").on(table.promoCodeId),
-  index("idx_legacy_orders_created_at").on(table.createdAt),
-]);
+  createdAt: timestamp("createdAt").defaultNow(),
+});
 
 // Mirrors old "OrderCommission" — per-recipient ledger row (source of truth for earnings).
-export const legacyOrderCommissions = pgTable("legacy_order_commissions", {
+// CUTOVER: mapped to the OLD shared "OrderCommission" table (earnings ledger).
+export const legacyOrderCommissions = pgTable("OrderCommission", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id").notNull().references(() => legacyOrders.id, { onDelete: 'cascade' }),
-  recipientUserId: varchar("recipient_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  orderId: varchar("orderId").notNull().references(() => legacyOrders.id, { onDelete: 'cascade' }),
+  recipientUserId: varchar("recipientUserId").notNull().references(() => users.id, { onDelete: 'cascade' }),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  sharePercent: decimal("share_percent", { precision: 6, scale: 5 }).notNull().default('1'),
-  payoutId: varchar("payout_id").references(() => creatorPayouts.id, { onDelete: 'set null' }),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_legacy_order_commissions_order").on(table.orderId),
-  index("idx_legacy_order_commissions_recipient").on(table.recipientUserId),
-  index("idx_legacy_order_commissions_payout").on(table.payoutId),
-]);
+  sharePercent: decimal("sharePercent", { precision: 6, scale: 5 }).notNull().default('1'),
+  payoutId: varchar("payoutId").references(() => creatorPayouts.id, { onDelete: 'set null' }),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
 
-// Mirrors old "CommissionSplit" — per-code rule splitting commission among recipients.
-export const legacyCommissionSplits = pgTable("legacy_commission_splits", {
+// CUTOVER: mapped to the OLD shared "CommissionSplit" table.
+//   promoCodeId -> discountCodeId
+export const legacyCommissionSplits = pgTable("CommissionSplit", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  promoCodeId: varchar("promo_code_id").notNull().references(() => promoCodes.id, { onDelete: 'cascade' }),
-  recipientUserId: varchar("recipient_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  sharePercent: decimal("share_percent", { precision: 6, scale: 5 }).notNull(),
+  promoCodeId: varchar("discountCodeId").notNull().references(() => promoCodes.id, { onDelete: 'cascade' }),
+  recipientUserId: varchar("recipientUserId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sharePercent: decimal("sharePercent", { precision: 6, scale: 5 }).notNull(),
   note: text("note"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_legacy_commission_splits_promo_code").on(table.promoCodeId),
-  index("idx_legacy_commission_splits_recipient").on(table.recipientUserId),
-]);
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
+});
 
 export const legacyOrdersRelations = relations(legacyOrders, ({ one, many }) => ({
   promoCode: one(promoCodes, {
@@ -1409,21 +1400,22 @@ export const creatorPayoutMethods = pgTable("creator_payout_methods", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const creatorPayouts = pgTable("creator_payouts", {
+// CUTOVER: mapped to the OLD shared "Payout" table.
+//   creatorId -> affiliateId; method/reference/paidByUserId are additive columns.
+//   NOTE: old `status` is enum PayoutStatus (PENDING|PROCESSING|PAID). Storage
+//   must write those UPPERCASE values (M3) — app 'pending'/'paid' is translated.
+export const creatorPayouts = pgTable("Payout", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  creatorId: varchar("affiliateId").notNull().references(() => users.id, { onDelete: 'cascade' }),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   method: varchar("method", { length: 20 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending' | 'paid' | 'cancelled'
-  reference: varchar("reference", { length: 200 }), // PayPal txn id, wire reference, etc.
+  status: varchar("status", { length: 20 }).notNull().default('pending'),
+  reference: varchar("reference", { length: 200 }),
   notes: text("notes"),
-  paidByUserId: varchar("paid_by_user_id").references(() => users.id),
-  paidAt: timestamp("paid_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_creator_payouts_creator_id").on(table.creatorId),
-  index("idx_creator_payouts_status").on(table.status),
-]);
+  paidByUserId: varchar("paidByUserId").references(() => users.id),
+  paidAt: timestamp("paidAt"),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
 
 // ============================================================
 // DEPRECATED TABLE STUBS

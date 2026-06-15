@@ -242,7 +242,7 @@ export class NotificationService {
       data.userName = data.userName || user.firstName || user.username;
       data.userEmail = data.userEmail || user.email;
 
-      const linkUrl = this.generateLinkUrl(type, data, user.role);
+      const linkUrl = this.generateLinkUrl(type, data, user.role as any);
 
       if (preferences?.inAppNotifications !== false) {
         await this.sendInAppNotification(userId, type, title, message, linkUrl, data);
