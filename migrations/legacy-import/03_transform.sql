@@ -42,12 +42,25 @@ WITH ranked AS (
                    '[^a-z0-9._-]', '', 'g'), ''), 'user')
       ORDER BY u.id)                                                 AS rn
   FROM public."User" u
+),
+named AS (
+  SELECT r.*,
+    -- Keep the clean base username only when it is the first in the batch AND
+    -- not already taken by an existing production user; otherwise suffix with the
+    -- (unique) legacy id so the result is collision-proof and deterministic.
+    CASE
+      WHEN rn = 1
+       AND NOT EXISTS (SELECT 1 FROM users ex WHERE ex.username = r.base)
+        THEN r.base
+      ELSE r.base || '-' || left(translate(r.id, '-', ''), 8)
+    END                                                              AS username
+  FROM ranked r
 )
 INSERT INTO users (id, username, email, password, role, account_status,
                    email_verified, first_name, last_name, created_at, updated_at)
 SELECT
   id::uuid,
-  CASE WHEN rn = 1 THEN base ELSE base || '-' || substr(id, 1, 4) END,
+  username,
   email_l,
   password_hash,
   CASE WHEN legacy_role = 'AFFILIATE' THEN 'creator' ELSE 'admin' END,
@@ -57,7 +70,7 @@ SELECT
   last_name,
   created_at,
   updated_at
-FROM ranked
+FROM named
 ON CONFLICT (id) DO UPDATE SET
   email          = EXCLUDED.email,
   password       = EXCLUDED.password,
