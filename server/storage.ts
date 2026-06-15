@@ -4401,7 +4401,7 @@ export class DatabaseStorage implements IStorage {
     const contract: any = {
       ...result[0].retainer_contracts,
       company: result[0].vendor_profiles,
-      companyUser: result[0].users,
+      companyUser: (result[0] as any).User,
     };
 
     contract.activeCreators = await this.getActiveRetainerCreatorsCount(contract.id);
@@ -4621,7 +4621,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...result[0].retainer_applications,
-      creator: result[0].users,
+      creator: (result[0] as any).User,
       creatorProfile: result[0].creator_profiles,
       contract: result[0].retainer_contracts,
     };

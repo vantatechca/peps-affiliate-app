@@ -25,7 +25,6 @@ export async function mintUniquePromoCode(creatorId: string, applicationId: stri
     try {
       await db.insert(promoCodes).values({
         creatorId,
-        applicationId: applicationId ?? undefined,
         code,
         status: "active",
       });
