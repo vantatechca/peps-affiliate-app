@@ -17,6 +17,13 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// CUTOVER: Payout.status is the old enum (UPPERCASE: PENDING/PROCESSING/PAID/
+// CANCELLED). The client expects lowercase. Normalize on the way out.
+function normPayout<T extends { status?: any }>(row: T): T {
+  if (row && (row as any).status != null) (row as any).status = String((row as any).status).toLowerCase();
+  return row;
+}
+
 // Tier thresholds (approved content_links count → tier).
 // Source of truth: docs/AFFEXCH_SESSION_HANDOFF.md §3 ("0=PENDING, 1=VERIFIED, 5=SILVER, 10=GOLD, 20=ELITE")
 const TIER_THRESHOLDS: Array<{ tier: "pending" | "verified" | "silver" | "gold" | "elite"; min: number }> = [
@@ -564,7 +571,7 @@ export function registerAffexchRoutes(app: Express) {
         .where(eq(creatorPayouts.creatorId, user.id))
         .orderBy(desc(creatorPayouts.createdAt))
         .limit(50);
-      res.json(rows);
+      res.json(rows.map(normPayout));
     } catch (err: any) {
       console.error("[AFFEXCH] payouts GET error:", err);
       res.status(500).json({ error: err?.message || "Failed to load payouts" });
@@ -638,7 +645,7 @@ export function registerAffexchRoutes(app: Express) {
         console.error("[AFFEXCH] notify on payout request failed:", notifyErr);
       }
 
-      res.json(row);
+      res.json(normPayout(row));
     } catch (err: any) {
       console.error("[AFFEXCH] payout request error:", err);
       res.status(500).json({ error: err?.message || "Failed to request payout" });
@@ -665,7 +672,7 @@ export function registerAffexchRoutes(app: Express) {
         )
         .returning();
       if (!row) return res.status(404).json({ error: "Pending payout not found" });
-      res.json(row);
+      res.json(normPayout(row));
     } catch (err: any) {
       console.error("[AFFEXCH] creator payout cancel error:", err);
       res.status(500).json({ error: err?.message || "Failed to cancel payout" });
@@ -1069,7 +1076,7 @@ export function registerAffexchRoutes(app: Express) {
         .leftJoin(users, eq(creatorPayouts.creatorId, users.id))
         .orderBy(desc(creatorPayouts.createdAt))
         .limit(200);
-      res.json(rows.map((r) => ({ ...r.payout, creatorEmail: r.creatorEmail, creatorFirstName: r.creatorFirstName, creatorLastName: r.creatorLastName })));
+      res.json(rows.map((r) => ({ ...normPayout(r.payout), creatorEmail: r.creatorEmail, creatorFirstName: r.creatorFirstName, creatorLastName: r.creatorLastName })));
     } catch (err: any) {
       console.error("[AFFEXCH] admin payouts list error:", err);
       res.status(500).json({ error: err?.message || "Failed to load payouts" });
@@ -1117,7 +1124,7 @@ export function registerAffexchRoutes(app: Express) {
         reference: reference ?? null,
       });
 
-      res.json(row);
+      res.json(normPayout(row));
     } catch (err: any) {
       console.error("[AFFEXCH] admin payout create error:", err);
       res.status(500).json({ error: err?.message || "Failed to record payout" });
@@ -1164,7 +1171,7 @@ export function registerAffexchRoutes(app: Express) {
         console.error("[AFFEXCH] notify on payout paid failed:", notifyErr);
       }
 
-      res.json(row);
+      res.json(normPayout(row));
     } catch (err: any) {
       console.error("[AFFEXCH] admin payout mark-paid error:", err);
       res.status(500).json({ error: err?.message || "Failed to mark payout paid" });
@@ -1187,7 +1194,7 @@ export function registerAffexchRoutes(app: Express) {
         method: row.method,
       });
 
-      res.json(row);
+      res.json(normPayout(row));
     } catch (err: any) {
       console.error("[AFFEXCH] admin payout cancel error:", err);
       res.status(500).json({ error: err?.message || "Failed to cancel payout" });
