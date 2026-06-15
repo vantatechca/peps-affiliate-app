@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -18,7 +19,58 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
+  Pencil,
+  X,
 } from "lucide-react";
+
+// Customers redeem the creator's code for this discount at checkout. Codes are
+// suggested with this number as a suffix (e.g. SAM10). The creator's commission
+// (20%) is a separate figure tracked server-side, not shown in the code.
+const CUSTOMER_DISCOUNT_PERCENT = 10;
+
+// Build 3 promo-code suggestions from the creator's email (and first name as a
+// fallback), each suffixed with the customer discount. Strips to A–Z/0–9 and
+// uppercases so suggestions are valid codes; pads with numbered variants so we
+// always return 3 distinct options even for short or digit-only emails.
+function buildPromoSuggestions(email?: string, firstName?: string): string[] {
+  const discount = String(CUSTOMER_DISCOUNT_PERCENT);
+  const clean = (s?: string) => (s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const local = clean(email?.split("@")[0]);
+  const name = clean(firstName);
+  const letters = local.replace(/[0-9]/g, "");
+  const digits = local.match(/\d+/)?.[0] ?? "";
+
+  const stems: string[] = [];
+  if (name) stems.push(name.slice(0, 8));
+  if (letters) stems.push(letters.slice(0, 3));
+  if (local) stems.push(local.slice(0, 5));
+  if (name && digits) stems.push(name.slice(0, 3) + digits);
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const stem of stems) {
+    const code = `${stem}${discount}`;
+    if (stem && code.length >= 3 && code.length <= 20 && !seen.has(code)) {
+      seen.add(code);
+      out.push(code);
+    }
+    if (out.length === 3) break;
+  }
+
+  const fallbackStem = (name || letters || local || "PEP").slice(0, 5);
+  let n = 1;
+  while (out.length < 3) {
+    const code = `${fallbackStem}${n}${discount}`;
+    if (!seen.has(code) && code.length <= 20) {
+      seen.add(code);
+      out.push(code);
+    }
+    n++;
+  }
+  return out.slice(0, 3);
+}
+
+const CUSTOM_CODE_RE = /^[A-Z0-9]{3,20}$/;
 
 // AFFEXCH peptide pivot — dashboard sections per docs/AFFEXCH_SESSION_HANDOFF.md §5 Phase 4
 // Six sections: PROMO CODE / SALES TRACKER / MILESTONE PROGRESS / SUBMITTED LINKS / SUBMIT A LINK / GUIDES
@@ -26,7 +78,7 @@ import {
 // combined dashboard or on its own dedicated /creator/<feature> page.
 
 export type AffiliateMe = {
-  promoCode: string;
+  promoCode: string | null;
   tier: "pending" | "verified" | "silver" | "gold" | "elite";
   nextTier: { tier: string; min: number; remaining: number } | null;
   linkCounts: { pending: number; approved: number; rejected: number };
@@ -83,7 +135,19 @@ export function useAffiliateRedemptions() {
 export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
   const { data: meFetched } = useAffiliateMe();
   const me = meProp ?? meFetched;
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [err, setErr] = useState("");
+
+  const suggestions = useMemo(
+    () => buildPromoSuggestions((user as any)?.email, (user as any)?.firstName),
+    [user],
+  );
+
   const copy = async () => {
     if (!me?.promoCode) return;
     try {
@@ -94,6 +158,43 @@ export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
       /* clipboard may fail in non-secure contexts — silently degrade */
     }
   };
+
+  const save = useMutation({
+    mutationFn: async (code: string) => {
+      const r = await fetch("/api/affiliate/me/promo-code", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error || "Failed to update promo code");
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/affiliate/me"] });
+      setEditing(false);
+      setValue("");
+      setErr("");
+    },
+    onError: (e: any) => setErr(e?.message || "Failed to update promo code"),
+  });
+
+  const startEdit = () => {
+    setValue(me?.promoCode ?? "");
+    setErr("");
+    setEditing(true);
+  };
+
+  const submit = () => {
+    const code = value.trim().toUpperCase();
+    if (!CUSTOM_CODE_RE.test(code)) {
+      setErr("Code must be 3–20 characters, letters and numbers only.");
+      return;
+    }
+    save.mutate(code);
+  };
+
   return (
     <Card data-testid="affexch-promo-code">
       <CardHeader className="pb-3">
@@ -103,17 +204,111 @@ export function PromoCodeSection({ me: meProp }: { me?: AffiliateMe } = {}) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Share this code with your audience. They enter it at checkout on peptide merchant sites to redeem a discount and credit you the commission.
+          Share this code with your audience. They enter it at checkout on peptide merchant sites
+          for {CUSTOMER_DISCOUNT_PERCENT}% off — and the sale is credited to you.
         </p>
-        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-          <div className="flex-1 font-mono text-lg sm:text-2xl font-bold tracking-wider px-3 py-2 sm:py-3 rounded-md border bg-muted text-foreground text-center select-all">
-            {me?.promoCode ?? "—"}
+
+        {!editing ? (
+          !me?.promoCode ? (
+            // No code set yet — creators choose their own (none is auto-assigned).
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              <div className="flex-1 px-3 py-2 sm:py-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground text-center text-xs sm:text-sm">
+                No promo code yet — create one to start sharing.
+              </div>
+              <Button
+                onClick={startEdit}
+                disabled={!me}
+                className="min-h-11 sm:min-h-10"
+                data-testid="promo-code-create"
+              >
+                <Sparkles className="h-4 w-4 mr-1" /> Create code
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              <div className="flex-1 font-mono text-lg sm:text-2xl font-bold tracking-wider px-3 py-2 sm:py-3 rounded-md border bg-muted text-foreground text-center select-all">
+                {me.promoCode}
+              </div>
+              <Button onClick={copy} className="min-h-11 sm:min-h-10">
+                {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={startEdit}
+                className="min-h-11 sm:min-h-10"
+                data-testid="promo-code-edit"
+              >
+                <Pencil className="h-4 w-4 mr-1" /> Edit
+              </Button>
+            </div>
+          )
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <Input
+                value={value}
+                onChange={(e) => {
+                  // Force the on-screen value to the canonical code shape so what
+                  // the creator types matches what gets saved.
+                  setValue(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20));
+                  if (err) setErr("");
+                }}
+                placeholder="YOURCODE10"
+                className="font-mono tracking-wider"
+                autoFocus
+                maxLength={20}
+                data-testid="promo-code-input"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                3–20 letters/numbers. Customers get {CUSTOMER_DISCOUNT_PERCENT}% off with it.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                Suggestions
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setValue(s);
+                      setErr("");
+                    }}
+                    className={`rounded-md border px-2.5 py-1 font-mono text-xs transition-colors hover:border-primary hover:bg-primary/5 ${
+                      value === s ? "border-primary bg-primary/10 text-primary" : "border-border"
+                    }`}
+                    data-testid={`promo-code-suggestion-${s}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {err && <p className="text-xs text-destructive">{err}</p>}
+
+            <div className="flex gap-2">
+              <Button onClick={submit} disabled={save.isPending} className="min-h-11 sm:min-h-10">
+                <Check className="h-4 w-4 mr-1" /> {save.isPending ? "Saving…" : "Save code"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setErr("");
+                }}
+                disabled={save.isPending}
+                className="min-h-11 sm:min-h-10"
+              >
+                <X className="h-4 w-4 mr-1" /> Cancel
+              </Button>
+            </div>
           </div>
-          <Button onClick={copy} disabled={!me?.promoCode} className="min-h-11 sm:min-h-10">
-            {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-            {copied ? "Copied" : "Copy"}
-          </Button>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

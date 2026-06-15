@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import {
@@ -14,7 +14,6 @@ import {
   Link as LinkIcon,
   Send,
   BookOpen,
-  MapPin,
   Wallet,
   X,
 } from "lucide-react";
@@ -25,7 +24,6 @@ const hideOnError = (e: React.SyntheticEvent<HTMLImageElement>) => {
 };
 import { useAuth } from "../hooks/useAuth";
 import { cn } from "../lib/utils";
-import { ChangeCityModal } from "./ChangeCityModal";
 
 // AFFEXCH Phase 9 mobile menu — standalone component, doesn't depend on shadcn
 // Sidebar primitives. Renders as a full-screen overlay below the topbar when
@@ -41,22 +39,18 @@ type Item = {
 };
 
 // AFFEXCH creator nav — feature tabs that mirror the dashboard sections.
-// Change City is a leaf with onClick (opens the city-picker modal, no URL).
 // Notifications / Profile / Settings live in the topbar avatar dropdown.
-function buildCreatorItems(openCityModal: () => void): Item[] {
-  return [
-    { title: "Dashboard", url: "/", icon: Home },
-    { title: "Promo Code", url: "/creator/promo-code", icon: Sparkles },
-    { title: "Sales Tracker", url: "/creator/sales", icon: TrendingUp },
-    { title: "Milestone Progress", url: "/creator/milestone", icon: Award },
-    { title: "My Links", url: "/creator/links", icon: LinkIcon },
-    { title: "Submit a Link", url: "/creator/submit-link", icon: Send },
-    { title: "Payouts", url: "/creator/payouts", icon: Wallet },
-    // Community Chat — reached via bottom-right FAB on the authenticated shell.
-    { title: "Change City", icon: MapPin, onClick: openCityModal },
-    { title: "Guides", url: "/creator/guides", icon: BookOpen, separatorBefore: true },
-  ];
-}
+const CREATOR_ITEMS: Item[] = [
+  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Promo Code", url: "/creator/promo-code", icon: Sparkles },
+  { title: "Sales Tracker", url: "/creator/sales", icon: TrendingUp },
+  { title: "Milestone Progress", url: "/creator/milestone", icon: Award },
+  { title: "My Links", url: "/creator/links", icon: LinkIcon },
+  { title: "Submit a Link", url: "/creator/submit-link", icon: Send },
+  { title: "Payouts", url: "/creator/payouts", icon: Wallet },
+  // Community Chat — reached via bottom-right FAB on the authenticated shell.
+  { title: "Guides", url: "/creator/guides", icon: BookOpen, separatorBefore: true },
+];
 
 // Note: company role is out of scope for AFFEXCH (see docs/AFFEXCH_SESSION_HANDOFF.md §3).
 // Only admin and creator (affiliate) roles get a mobile menu.
@@ -65,7 +59,6 @@ const ADMIN_ITEMS: Item[] = [
   { title: "Dashboard", url: "/admin", icon: Home },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Merchants", url: "/admin/merchants", icon: Building2 },
-  { title: "Offers", url: "/admin/offers", icon: TrendingUp },
   { title: "Creators", url: "/admin/creators", icon: Users },
   { title: "Link Approval", url: "/admin/content-links", icon: CheckCircle },
   { title: "Payouts", url: "/admin/payouts", icon: Wallet },
@@ -80,7 +73,6 @@ interface MobileNavMenuProps {
 export function MobileNavMenu({ open, onClose }: MobileNavMenuProps) {
   const { user } = useAuth();
   const [location] = useLocation();
-  const [cityModalOpen, setCityModalOpen] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -99,11 +91,7 @@ export function MobileNavMenu({ open, onClose }: MobileNavMenuProps) {
   if (typeof document === "undefined") return null;
 
   const u = user as { role?: string } | null;
-  const creatorItems = buildCreatorItems(() => {
-    onClose();
-    setCityModalOpen(true);
-  });
-  const items = u?.role === "admin" ? ADMIN_ITEMS : creatorItems;
+  const items = u?.role === "admin" ? ADMIN_ITEMS : CREATOR_ITEMS;
   const portalLabel = u?.role === "admin" ? "Admin Panel" : "Creator Portal";
 
   return (
@@ -245,9 +233,6 @@ export function MobileNavMenu({ open, onClose }: MobileNavMenuProps) {
       </div>
     </div>,
     document.body
-    )}
-    {u?.role === "creator" && (
-      <ChangeCityModal open={cityModalOpen} onOpenChange={setCityModalOpen} />
     )}
     </>
   );

@@ -6,7 +6,7 @@ import { db, pool } from "./db";
 import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, communityChatMessages, creatorPayoutMethods, creatorPayouts, auditLogs } from "../shared/schema";
 import { eq, and, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
-import { getCreatorPromoCode, mintUniquePromoCode } from "./affexchPromoCode";
+import { getCreatorPromoCode, setCreatorPromoCode } from "./affexchPromoCode";
 import { NotificationService } from "./notifications/notificationService";
 import { storage } from "./storage";
 
@@ -190,9 +190,9 @@ export function registerAffexchRoutes(app: Express) {
         return res.status(403).json({ error: "Affiliate role required" });
       }
 
-      // Promo code (mint lazily for legacy creators who pre-date Phase 3)
-      let code = await getCreatorPromoCode(user.id);
-      if (!code) code = await mintUniquePromoCode(user.id, null);
+      // Promo code is creator-chosen; null until they set one on the Promo
+      // Code page. No auto-generation.
+      const code = await getCreatorPromoCode(user.id);
 
       // Counts by status
       const rows = await db
@@ -258,6 +258,28 @@ export function registerAffexchRoutes(app: Express) {
     } catch (err: any) {
       console.error("[AFFEXCH] /me/city PATCH error:", err);
       res.status(500).json({ error: err?.message || "Failed to update city" });
+    }
+  });
+
+  // PATCH /api/affiliate/me/promo-code — creator sets a custom promo code,
+  // replacing the auto-assigned PEP-XXXX-XXXX. Format is validated and
+  // uniqueness enforced by setCreatorPromoCode (409 if the code is taken).
+  app.patch("/api/affiliate/me/promo-code", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const { code } = req.body ?? {};
+      if (typeof code !== "string") {
+        return res.status(400).json({ error: "Code is required" });
+      }
+      const promoCode = await setCreatorPromoCode(user.id, code);
+      res.json({ promoCode });
+    } catch (err: any) {
+      const status = err?.statusCode ?? 500;
+      if (status === 500) console.error("[AFFEXCH] /me/promo-code PATCH error:", err);
+      res.status(status).json({ error: err?.message || "Failed to update promo code" });
     }
   });
 

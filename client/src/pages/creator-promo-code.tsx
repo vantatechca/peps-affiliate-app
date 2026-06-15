@@ -15,7 +15,9 @@ import {
 
 export default function CreatorPromoCodePage() {
   const { data: me } = useAffiliateMe();
-  const code = me?.promoCode ?? "PEP-XXXX-XXXX";
+  // Falls back to a placeholder in the share/caption snippets until the creator
+  // sets their own code in the section below (none is auto-assigned at signup).
+  const code = me?.promoCode ?? "YOURCODE";
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 fx-page">
@@ -70,9 +72,9 @@ function HowItWorksCard() {
 
 function SharePresetsCard({ code }: { code: string }) {
   const platforms = [
-    { name: "Instagram bio", icon: Instagram, snippet: `🧬 Use ${code} for 20% off your first peptide order` },
-    { name: "TikTok pinned comment", icon: Music2, snippet: `code: ${code} | 20% off | linked merchants below` },
-    { name: "YouTube description", icon: Youtube, snippet: `Promo code: ${code} — 20% off at partner peptide merchants` },
+    { name: "Instagram bio", icon: Instagram, snippet: `🧬 Use ${code} for 10% off your first peptide order` },
+    { name: "TikTok pinned comment", icon: Music2, snippet: `code: ${code} | 10% off | linked merchants below` },
+    { name: "YouTube description", icon: Youtube, snippet: `Promo code: ${code} — 10% off at partner peptide merchants` },
   ];
   return (
     <Card>
@@ -117,9 +119,9 @@ function SnippetRow({ icon: Icon, label, snippet }: { icon: any; label: string; 
 
 function PostTemplatesCard({ code }: { code: string }) {
   const templates = [
-    `Been on the BPC-157 protocol for 6 weeks now — recovery is unreal. If you've been curious, use my code ${code} at checkout for 20% off your first order from any of our partner merchants. Link in bio.`,
-    `Question I keep getting: which peptide for sleep? Personally I run Epithalon nightly. Code ${code} gets you 20% off. Asked the merchant to drop the link in my bio.`,
-    `Real talk: most peptide sites are sketchy. The ones we partner with are vetted. Use code ${code} at checkout — 20% off + helps support the channel. Stack receipts.`,
+    `Been on the BPC-157 protocol for 6 weeks now — recovery is unreal. If you've been curious, use my code ${code} at checkout for 10% off your first order from any of our partner merchants. Link in bio.`,
+    `Question I keep getting: which peptide for sleep? Personally I run Epithalon nightly. Code ${code} gets you 10% off. Asked the merchant to drop the link in my bio.`,
+    `Real talk: most peptide sites are sketchy. The ones we partner with are vetted. Use code ${code} at checkout — 10% off + helps support the channel. Stack receipts.`,
   ];
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const copy = async (text: string, idx: number) => {
