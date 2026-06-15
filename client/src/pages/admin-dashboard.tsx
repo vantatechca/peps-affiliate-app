@@ -6,7 +6,6 @@ import { Badge } from "../components/ui/badge";
 import {
   Users,
   Building2,
-  TrendingUp,
   DollarSign,
   CheckCircle,
   Wallet,
@@ -74,7 +73,6 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 fx-stagger fx-cards">
         <StatCard icon={Users} label="Creators" value={summary?.counts.creators ?? 0} href="/admin/creators" />
         <StatCard icon={Building2} label="Merchants" value={summary?.counts.merchants ?? 0} href="/admin/merchants" />
-        <StatCard icon={TrendingUp} label="Active Offers" value={summary?.counts.offers ?? 0} href="/admin/offers" />
         <StatCard
           icon={DollarSign}
           label="Commission Paid"

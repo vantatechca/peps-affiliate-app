@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   DollarSign,
   MapPin,
-  RefreshCw,
 } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import {
@@ -22,7 +21,6 @@ import {
   type AffiliateMe,
   type Redemption,
 } from "../components/AffexchDashboardSections";
-import { ChangeCityModal } from "../components/ChangeCityModal";
 import { AffexchBootLoader } from "../components/AffexchBootLoader";
 
 const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
@@ -59,7 +57,6 @@ type DashboardOffer = {
 export default function CreatorDashboard() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [errorDialog, setErrorDialog] = useState<{ title: string; message: string } | null>(null);
-  const [cityModalOpen, setCityModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -243,7 +240,7 @@ export default function CreatorDashboard() {
 
         {/* Offers near city */}
         <div>
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <div className="mb-2 sm:mb-3">
             <div>
               <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
@@ -252,16 +249,9 @@ export default function CreatorDashboard() {
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {city
                   ? `Local peptide merchants in ${city}`
-                  : "Set your city to see businesses near you"}
+                  : "Popular peptide merchants across the network"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setCityModalOpen(true)}
-              className="text-[11px] inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
-            >
-              <RefreshCw className="h-3 w-3" /> {city ? "Change city" : "Set city"}
-            </button>
           </div>
 
           {!localOffers || localOffers.length === 0 ? (
@@ -290,8 +280,6 @@ export default function CreatorDashboard() {
         title={errorDialog?.title}
         description={errorDialog?.message}
       />
-
-      <ChangeCityModal open={cityModalOpen} onOpenChange={setCityModalOpen} />
     </div>
   );
 }

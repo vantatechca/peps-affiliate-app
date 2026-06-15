@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
   Home,
-  TrendingUp,
   Building2,
   Users,
   ScrollText,
@@ -30,7 +29,6 @@ const ITEMS: Item[] = [
     icon: Sliders,
     children: [
       { title: "Merchants", url: "/admin/merchants", icon: Building2 },
-      { title: "Offers", url: "/admin/offers", icon: TrendingUp },
       { title: "Creators", url: "/admin/creators", icon: Users },
     ],
   },

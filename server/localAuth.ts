@@ -18,7 +18,6 @@ import crypto from "crypto";
 
 import { NotificationService } from "./notifications/notificationService";
 
-import { mintUniquePromoCode } from "./affexchPromoCode";
 
 // Middleware to check if user is authenticated
 
@@ -569,8 +568,9 @@ export async function setupAuth(app: Express) {
         niches: ["peptides"],
       });
 
-      // Mint unique PEP-XXXX-XXXX promo code
-      const promoCode = await mintUniquePromoCode(user.id, null);
+      // No promo code is assigned at signup — the creator picks their own on
+      // the Promo Code page. It stays blank until they set it.
+      const promoCode = null;
 
       // Phase 6.5: removed email verification send.
 

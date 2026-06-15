@@ -26,7 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { ChangeCityModal } from "./ChangeCityModal";
 import {
   Home,
   TrendingUp,
@@ -41,7 +40,6 @@ import {
   Link as LinkIcon,
   Send,
   BookOpen,
-  MapPin,
   Wallet,
 } from "lucide-react";
 import logoUrl from "../assets/logo.png";
@@ -73,7 +71,6 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const currentYear = new Date().getFullYear();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
-  const [cityModalOpen, setCityModalOpen] = useState(false);
   const isCreator = user?.role !== 'admin';
 
   // Close sidebar on mobile when navigation link is clicked
@@ -85,7 +82,7 @@ export function AppSidebar() {
 
   // AFFEXCH creator nav — feature tabs that map 1:1 to the AFFEXCH dashboard
   // sections. Notifications / Profile / Settings live in the topbar avatar
-  // dropdown instead. Change City is special — opens a modal, no URL.
+  // dropdown instead.
   const creatorItems: MenuItem[] = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Promo Code", url: "/creator/promo-code", icon: Sparkles },
@@ -96,14 +93,6 @@ export function AppSidebar() {
     { title: "Payouts", url: "/creator/payouts", icon: Wallet },
     // Community Chat is reachable via the bottom-right FAB (mounted in
     // AuthenticatedLayout) — same UX as the landing page launcher.
-    {
-      title: "Change City",
-      icon: MapPin,
-      onClick: () => {
-        setCityModalOpen(true);
-        if (isMobile) setOpenMobile(false);
-      },
-    },
     // Guides sits at the bottom, separated from the action items above.
     { title: "Guides", url: "/creator/guides", icon: BookOpen, separatorBefore: true },
   ];
@@ -116,7 +105,6 @@ export function AppSidebar() {
       icon: Sliders,
       children: [
         { title: "Merchants", url: "/admin/merchants", icon: Building2 },
-        { title: "Offers", url: "/admin/offers", icon: TrendingUp },
         { title: "Creators", url: "/admin/creators", icon: Users },
       ],
     },
@@ -319,9 +307,6 @@ export function AppSidebar() {
         </div>
       </SidebarFooter>
     </Sidebar>
-    {user?.role === 'creator' && (
-      <ChangeCityModal open={cityModalOpen} onOpenChange={setCityModalOpen} />
-    )}
     </>
   );
 }

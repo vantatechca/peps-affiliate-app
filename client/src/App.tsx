@@ -58,8 +58,6 @@ import NotificationDetail from "./pages/notification-detail";
 import AdminDashboard from "./pages/admin-dashboard";
 import AdminCompanies from "./pages/admin-companies";
 import AdminMerchantDetail from "./pages/admin-merchant-detail";
-import AdminOffers from "./pages/admin-offers";
-import AdminOfferDetail from "./pages/admin-offer-detail";
 import AdminCreators from "./pages/admin-creators";
 import AdminCreatorDetail from "./pages/admin-creator-detail";
 import AdminAuditLogs from "./pages/admin-audit-logs";
@@ -344,9 +342,6 @@ function ProtectedRouter() {
               <Route path="/admin/companies/:id">
                 {(params) => { window.location.replace(`/admin/merchants/${params.id}`); return null; }}
               </Route>
-              <Route path="/admin/offers" component={AdminOffers} />
-              <Route path="/admin/offers/:id" component={AdminOfferDetail} />
-              <Route path="/admin-offer-detail/:id" component={AdminOfferDetail} />
               <Route path="/admin/creators" component={AdminCreators} />
               <Route path="/admin/creators/:id" component={AdminCreatorDetail} />
               <Route path="/admin/content-links" component={AdminContentLinks} />

@@ -111,10 +111,6 @@ export default function CreatorGuidesPage() {
             q="What if my link gets rejected?"
             a="Check the rejection reason on My Links. Fix the issue and resubmit. Common fix: make sure your code is visible in the caption."
           />
-          <Faq
-            q="Can I change my city?"
-            a="Yes. Sidebar → Change City. This updates which local merchants surface on your dashboard."
-          />
         </CardContent>
       </Card>
     </div>
