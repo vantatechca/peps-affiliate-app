@@ -201,37 +201,21 @@ export function registerAffexchRoutes(app: Express) {
       // Code page. No auto-generation.
       const code = await getCreatorPromoCode(user.id);
 
-      // Counts by status
-      const rows = await db
-        .select({ status: contentLinks.status })
-        .from(contentLinks)
-        .where(eq(contentLinks.creatorId, user.id));
-
-      const counts = { pending: 0, approved: 0, rejected: 0 };
-      for (const r of rows) counts[r.status as keyof typeof counts]++;
-
-      const tier = tierFromApprovedCount(counts.approved);
-      const next = nextTierForApprovedCount(counts.approved);
-
-      // Pull creator_profiles affiliate_tier — keep DB in sync if it drifted
+      // CUTOVER: content_links is a cut feature/table on the old DB. Tier now
+      // comes straight from creator_profiles (no link-count derivation).
       const [profile] = await db
         .select({ affiliateTier: creatorProfiles.affiliateTier, city: creatorProfiles.city })
         .from(creatorProfiles)
         .where(eq(creatorProfiles.userId, user.id))
         .limit(1);
 
-      if (profile && profile.affiliateTier !== tier) {
-        await db
-          .update(creatorProfiles)
-          .set({ affiliateTier: tier, updatedAt: new Date() })
-          .where(eq(creatorProfiles.userId, user.id));
-      }
+      const tier = (profile?.affiliateTier as any) ?? "pending";
 
       res.json({
         promoCode: code,
         tier,
-        nextTier: next, // { tier, min, remaining } or null if already elite
-        linkCounts: counts,
+        nextTier: null,
+        linkCounts: { pending: 0, approved: 0, rejected: 0 },
         city: profile?.city ?? null,
       });
     } catch (err: any) {
