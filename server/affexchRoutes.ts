@@ -3,7 +3,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createHash, timingSafeEqual, randomUUID } from "crypto";
 import { db, pool } from "./db";
-import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, communityChatMessages, creatorPayoutMethods, creatorPayouts, auditLogs } from "../shared/schema";
+import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, communityChatMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
 import { eq, and, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { getCreatorPromoCode, setCreatorPromoCode } from "./affexchPromoCode";
@@ -451,11 +451,11 @@ export function registerAffexchRoutes(app: Express) {
 
   // Compute the creator's accrued commission + payout aggregates in one shot.
   async function getCreatorBalance(creatorId: string) {
+    // CUTOVER: earnings come from the OrderCommission ledger (recipient = creator).
     const [redRow] = await db
-      .select({ total: sum(codeRedemptions.commissionAmount) })
-      .from(codeRedemptions)
-      .innerJoin(promoCodes, eq(codeRedemptions.promoCodeId, promoCodes.id))
-      .where(eq(promoCodes.creatorId, creatorId));
+      .select({ total: sum(legacyOrderCommissions.amount) })
+      .from(legacyOrderCommissions)
+      .where(eq(legacyOrderCommissions.recipientUserId, creatorId));
     const [paidRow] = await db
       .select({ total: sum(creatorPayouts.amount) })
       .from(creatorPayouts)
@@ -834,6 +834,7 @@ export function registerAffexchRoutes(app: Express) {
   app.get("/api/admin/affexch-summary", isAuthenticated, requireAdmin, async (_req: Request, res) => {
     try {
       // ---- Counts ----
+      // CUTOVER: old "User".role uses AFFILIATE; sales live in legacy Order tables.
       const [creatorCountRow] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(users)
@@ -841,18 +842,8 @@ export function registerAffexchRoutes(app: Express) {
       const [merchantCountRow] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(vendorProfiles);
-      const [offerCountRow] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(offers)
-        .where(eq(offers.status, "approved"));
 
-      // Pending content links (creator-submitted, awaiting admin review)
-      const [pendingLinksRow] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(contentLinks)
-        .where(eq(contentLinks.status, "pending"));
-
-      // Pending payout requests
+      // Pending payout requests (old PayoutStatus enum is UPPERCASE)
       const [pendingPayoutsRow] = await db
         .select({
           count: sql<number>`count(*)::int`,
@@ -861,16 +852,16 @@ export function registerAffexchRoutes(app: Express) {
         .from(creatorPayouts)
         .where(eq(creatorPayouts.status, "pending"));
 
-      // Lifetime totals
+      // Lifetime totals — from legacy Order / OrderCommission (system of record)
       const [lifetimeEarnedRow] = await db
-        .select({ total: sum(codeRedemptions.commissionAmount) })
-        .from(codeRedemptions);
+        .select({ total: sum(legacyOrders.commissionEarned) })
+        .from(legacyOrders);
       const [lifetimeSalesRow] = await db
         .select({
           count: sql<number>`count(*)::int`,
-          total: sum(codeRedemptions.saleAmount),
+          total: sum(legacyOrders.orderTotal),
         })
-        .from(codeRedemptions);
+        .from(legacyOrders);
       const [lifetimePaidRow] = await db
         .select({ total: sum(creatorPayouts.amount) })
         .from(creatorPayouts)
@@ -882,14 +873,14 @@ export function registerAffexchRoutes(app: Express) {
       since.setHours(0, 0, 0, 0);
       const seriesRows = await db
         .select({
-          day: sql<string>`to_char(${codeRedemptions.redeemedAt}, 'YYYY-MM-DD')`,
-          sales: sum(codeRedemptions.saleAmount),
-          commission: sum(codeRedemptions.commissionAmount),
+          day: sql<string>`to_char(${legacyOrders.createdAt}, 'YYYY-MM-DD')`,
+          sales: sum(legacyOrders.orderTotal),
+          commission: sum(legacyOrders.commissionEarned),
           count: sql<number>`count(*)::int`,
         })
-        .from(codeRedemptions)
-        .where(sql`${codeRedemptions.redeemedAt} >= ${since.toISOString()}`)
-        .groupBy(sql`to_char(${codeRedemptions.redeemedAt}, 'YYYY-MM-DD')`);
+        .from(legacyOrders)
+        .where(sql`${legacyOrders.createdAt} >= ${since.toISOString()}`)
+        .groupBy(sql`to_char(${legacyOrders.createdAt}, 'YYYY-MM-DD')`);
 
       const seriesMap = new Map(seriesRows.map((r) => [r.day, r]));
       const timeSeries: Array<{ date: string; label: string; sales: number; commission: number; count: number }> = [];
@@ -908,49 +899,45 @@ export function registerAffexchRoutes(app: Express) {
         });
       }
 
-      // ---- Top creators (by commission) ----
+      // ---- Top creators (by commission) ---- from the OrderCommission ledger
       const topCreatorRows = await db
         .select({
-          creatorId: promoCodes.creatorId,
+          creatorId: legacyOrderCommissions.recipientUserId,
           firstName: users.firstName,
           lastName: users.lastName,
           email: users.email,
-          totalCommission: sum(codeRedemptions.commissionAmount),
-          totalSales: sum(codeRedemptions.saleAmount),
+          totalCommission: sum(legacyOrderCommissions.amount),
           saleCount: sql<number>`count(*)::int`,
         })
-        .from(codeRedemptions)
-        .innerJoin(promoCodes, eq(codeRedemptions.promoCodeId, promoCodes.id))
-        .innerJoin(users, eq(promoCodes.creatorId, users.id))
-        .groupBy(promoCodes.creatorId, users.firstName, users.lastName, users.email)
-        .orderBy(desc(sum(codeRedemptions.commissionAmount)))
+        .from(legacyOrderCommissions)
+        .innerJoin(users, eq(legacyOrderCommissions.recipientUserId, users.id))
+        .groupBy(legacyOrderCommissions.recipientUserId, users.firstName, users.lastName, users.email)
+        .orderBy(desc(sum(legacyOrderCommissions.amount)))
         .limit(5);
 
-      // ---- Top merchants (by gross sales) ----
+      // ---- Top merchants (by gross sales) ---- grouped by store (old orders carry
+      // a free-text storeName, not a vendor_profiles link).
       const topMerchantRows = await db
         .select({
-          vendorId: codeRedemptions.vendorId,
-          tradeName: vendorProfiles.tradeName,
-          legalName: vendorProfiles.legalName,
-          city: vendorProfiles.city,
-          totalSales: sum(codeRedemptions.saleAmount),
-          totalCommission: sum(codeRedemptions.commissionAmount),
+          storeName: legacyOrders.storeName,
+          totalSales: sum(legacyOrders.orderTotal),
+          totalCommission: sum(legacyOrders.commissionEarned),
           saleCount: sql<number>`count(*)::int`,
         })
-        .from(codeRedemptions)
-        .innerJoin(vendorProfiles, eq(codeRedemptions.vendorId, vendorProfiles.id))
-        .groupBy(codeRedemptions.vendorId, vendorProfiles.tradeName, vendorProfiles.legalName, vendorProfiles.city)
-        .orderBy(desc(sum(codeRedemptions.saleAmount)))
+        .from(legacyOrders)
+        .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
+        .groupBy(legacyOrders.storeName)
+        .orderBy(desc(sum(legacyOrders.orderTotal)))
         .limit(5);
 
       res.json({
         counts: {
           creators: creatorCountRow?.count ?? 0,
           merchants: merchantCountRow?.count ?? 0,
-          offers: offerCountRow?.count ?? 0,
+          offers: 0,
         },
         pending: {
-          links: pendingLinksRow?.count ?? 0,
+          links: 0,
           payoutCount: pendingPayoutsRow?.count ?? 0,
           payoutAmount: parseFloat(pendingPayoutsRow?.total ?? "0"),
         },
@@ -966,13 +953,13 @@ export function registerAffexchRoutes(app: Express) {
           name: [r.firstName, r.lastName].filter(Boolean).join(" ") || r.email || r.creatorId,
           email: r.email,
           totalCommission: parseFloat(r.totalCommission ?? "0"),
-          totalSales: parseFloat(r.totalSales ?? "0"),
+          totalSales: 0,
           saleCount: r.saleCount,
         })),
         topMerchants: topMerchantRows.map((r) => ({
-          vendorId: r.vendorId,
-          name: r.tradeName ?? r.legalName,
-          city: r.city,
+          vendorId: r.storeName,
+          name: r.storeName,
+          city: null,
           totalSales: parseFloat(r.totalSales ?? "0"),
           totalCommission: parseFloat(r.totalCommission ?? "0"),
           saleCount: r.saleCount,
@@ -991,12 +978,11 @@ export function registerAffexchRoutes(app: Express) {
       // queries because Drizzle's compound subselect syntax is awkward here.
       const earnedRows = await db
         .select({
-          creatorId: promoCodes.creatorId,
-          earned: sum(codeRedemptions.commissionAmount),
+          creatorId: legacyOrderCommissions.recipientUserId,
+          earned: sum(legacyOrderCommissions.amount),
         })
-        .from(codeRedemptions)
-        .innerJoin(promoCodes, eq(codeRedemptions.promoCodeId, promoCodes.id))
-        .groupBy(promoCodes.creatorId);
+        .from(legacyOrderCommissions)
+        .groupBy(legacyOrderCommissions.recipientUserId);
 
       const paidRows = await db
         .select({
