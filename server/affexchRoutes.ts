@@ -418,24 +418,24 @@ export function registerAffexchRoutes(app: Express) {
       if (!user || user.role !== "creator") {
         return res.status(403).json({ error: "Affiliate role required" });
       }
+      // CUTOVER: a creator's redemptions = their rows in the OrderCommission
+      // ledger, joined to the Order for sale amount / store / date.
       const rows = await db
         .select({
-          id: codeRedemptions.id,
-          saleAmount: codeRedemptions.saleAmount,
-          commissionAmount: codeRedemptions.commissionAmount,
-          redeemedAt: codeRedemptions.redeemedAt,
-          vendorName: vendorProfiles.tradeName,
-          vendorLegalName: vendorProfiles.legalName,
-          vendorCity: vendorProfiles.city,
+          id: legacyOrderCommissions.id,
+          saleAmount: legacyOrders.orderTotal,
+          commissionAmount: legacyOrderCommissions.amount,
+          redeemedAt: legacyOrders.createdAt,
+          vendorName: legacyOrders.storeName,
           promoCode: promoCodes.code,
         })
-        .from(codeRedemptions)
-        .innerJoin(promoCodes, eq(codeRedemptions.promoCodeId, promoCodes.id))
-        .innerJoin(vendorProfiles, eq(codeRedemptions.vendorId, vendorProfiles.id))
-        .where(eq(promoCodes.creatorId, user.id))
-        .orderBy(desc(codeRedemptions.redeemedAt))
+        .from(legacyOrderCommissions)
+        .innerJoin(legacyOrders, eq(legacyOrderCommissions.orderId, legacyOrders.id))
+        .leftJoin(promoCodes, eq(legacyOrders.promoCodeId, promoCodes.id))
+        .where(eq(legacyOrderCommissions.recipientUserId, user.id))
+        .orderBy(desc(legacyOrders.createdAt))
         .limit(100);
-      res.json(rows);
+      res.json(rows.map((r) => ({ ...r, vendorLegalName: r.vendorName, vendorCity: null })));
     } catch (err: any) {
       console.error("[AFFEXCH] redemptions GET error:", err);
       res.status(500).json({ error: err?.message || "Failed to list redemptions" });
