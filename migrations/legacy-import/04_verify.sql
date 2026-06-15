@@ -5,18 +5,18 @@
 SELECT 'users'             AS entity,
        (SELECT count(*) FROM public."User")                                            AS legacy,
        (SELECT count(*) FROM users u
-          WHERE EXISTS (SELECT 1 FROM public."User" l WHERE l.id = u.id))              AS migrated
+          WHERE EXISTS (SELECT 1 FROM public."User" l WHERE l.id::uuid = u.id))        AS migrated
 UNION ALL
 SELECT 'creator_profiles',
        (SELECT count(*) FROM public."User" WHERE role = 'AFFILIATE'),
        (SELECT count(*) FROM creator_profiles cp
           WHERE EXISTS (SELECT 1 FROM public."User" l
-                        WHERE l.id = cp.user_id AND l.role = 'AFFILIATE'))
+                        WHERE l.id::uuid = cp.user_id AND l.role = 'AFFILIATE'))
 UNION ALL
 SELECT 'promo_codes',
        (SELECT count(*) FROM public."DiscountCode"),
        (SELECT count(*) FROM promo_codes p
-          WHERE EXISTS (SELECT 1 FROM public."DiscountCode" d WHERE d.id = p.id))
+          WHERE EXISTS (SELECT 1 FROM public."DiscountCode" d WHERE d.id::uuid = p.id))
 UNION ALL
 SELECT 'commission_splits',
        (SELECT count(*) FROM public."CommissionSplit"),
@@ -25,7 +25,7 @@ UNION ALL
 SELECT 'creator_payouts',
        (SELECT count(*) FROM public."Payout"),
        (SELECT count(*) FROM creator_payouts cp
-          WHERE EXISTS (SELECT 1 FROM public."Payout" l WHERE l.id = cp.id))
+          WHERE EXISTS (SELECT 1 FROM public."Payout" l WHERE l.id::uuid = cp.id))
 UNION ALL
 SELECT 'legacy_orders',
        (SELECT count(*) FROM public."Order"),
