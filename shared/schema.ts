@@ -124,6 +124,8 @@ export const users = pgTable("User", {
   googleId: varchar("googleId").unique(),
   firstName: varchar("firstName"),
   lastName: varchar("lastName"),
+  // old "User".name is NOT NULL; storage.createUser/upsertUser fill it via deriveName.
+  name: varchar("name"),
   profileImageUrl: varchar("profileImageUrl"),
   role: varchar("role").notNull().default('AFFILIATE'),
   accountStatus: varchar("accountStatus").notNull().default('active'),

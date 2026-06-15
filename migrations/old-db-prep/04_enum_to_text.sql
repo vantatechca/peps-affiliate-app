@@ -1,25 +1,7 @@
 -- ============================================================
--- 04_enum_to_text.sql
--- The app uses lowercase role/status values; the old DB stored them as
--- UPPERCASE enums (Role, PayoutStatus), which makes every lowercase comparison
--- error ("invalid input value for enum"). Convert those two columns to plain
--- text and normalize existing values to the app's native lowercase forms.
--- Idempotent. The old enum types are left in place (harmless, now unused).
--- The storefront integration does not read these columns, so it is unaffected.
+-- 04_enum_to_text.sql  — SUPERSEDED, intentionally a no-op.
+-- This step converted "User".role / "Payout".status to text, which broke the
+-- OLD app (it needs the original enums). It has been replaced by
+-- 05_restore_enums.sql. Do NOT apply this; kept only for history.
 -- ============================================================
-
--- ---- User.role -> text (AFFILIATE->creator, ADMIN/SUPER_ADMIN->admin) ----
-ALTER TABLE "User" ALTER COLUMN role DROP DEFAULT;
-ALTER TABLE "User" ALTER COLUMN role TYPE text USING role::text;
-UPDATE "User" SET role = CASE role
-  WHEN 'AFFILIATE'   THEN 'creator'
-  WHEN 'ADMIN'       THEN 'admin'
-  WHEN 'SUPER_ADMIN' THEN 'admin'
-  ELSE role END;
-ALTER TABLE "User" ALTER COLUMN role SET DEFAULT 'creator';
-
--- ---- Payout.status -> text (PAID->paid, PENDING->pending, PROCESSING->processing) ----
-ALTER TABLE "Payout" ALTER COLUMN status DROP DEFAULT;
-ALTER TABLE "Payout" ALTER COLUMN status TYPE text USING status::text;
-UPDATE "Payout" SET status = lower(status);
-ALTER TABLE "Payout" ALTER COLUMN status SET DEFAULT 'pending';
+SELECT 1;

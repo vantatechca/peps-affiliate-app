@@ -459,11 +459,11 @@ export function registerAffexchRoutes(app: Express) {
     const [paidRow] = await db
       .select({ total: sum(creatorPayouts.amount) })
       .from(creatorPayouts)
-      .where(and(eq(creatorPayouts.creatorId, creatorId), eq(creatorPayouts.status, "paid")));
+      .where(and(eq(creatorPayouts.creatorId, creatorId), eq(creatorPayouts.status, "PAID")));
     const [pendingRow] = await db
       .select({ total: sum(creatorPayouts.amount) })
       .from(creatorPayouts)
-      .where(and(eq(creatorPayouts.creatorId, creatorId), eq(creatorPayouts.status, "pending")));
+      .where(and(eq(creatorPayouts.creatorId, creatorId), eq(creatorPayouts.status, "PENDING")));
 
     const earned = parseFloat(redRow?.total ?? "0");
     const paid = parseFloat(paidRow?.total ?? "0");
@@ -615,7 +615,7 @@ export function registerAffexchRoutes(app: Express) {
           creatorId: user.id,
           amount: amt.toFixed(2),
           method: savedMethod.method,
-          status: "pending",
+          status: "PENDING",
           notes,
         })
         .returning();
@@ -655,12 +655,12 @@ export function registerAffexchRoutes(app: Express) {
       }
       const [row] = await db
         .update(creatorPayouts)
-        .set({ status: "cancelled" })
+        .set({ status: "CANCELLED" })
         .where(
           and(
             eq(creatorPayouts.id, req.params.id),
             eq(creatorPayouts.creatorId, user.id),
-            eq(creatorPayouts.status, "pending"),
+            eq(creatorPayouts.status, "PENDING"),
           ),
         )
         .returning();
@@ -838,7 +838,7 @@ export function registerAffexchRoutes(app: Express) {
       const [creatorCountRow] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(users)
-        .where(eq(users.role, "creator"));
+        .where(eq(users.role, "AFFILIATE"));
       const [merchantCountRow] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(vendorProfiles);
@@ -850,7 +850,7 @@ export function registerAffexchRoutes(app: Express) {
           total: sum(creatorPayouts.amount),
         })
         .from(creatorPayouts)
-        .where(eq(creatorPayouts.status, "pending"));
+        .where(eq(creatorPayouts.status, "PENDING"));
 
       // Lifetime totals — from legacy Order / OrderCommission (system of record)
       const [lifetimeEarnedRow] = await db
@@ -865,7 +865,7 @@ export function registerAffexchRoutes(app: Express) {
       const [lifetimePaidRow] = await db
         .select({ total: sum(creatorPayouts.amount) })
         .from(creatorPayouts)
-        .where(eq(creatorPayouts.status, "paid"));
+        .where(eq(creatorPayouts.status, "PAID"));
 
       // ---- 30-day time series ----
       const since = new Date();
@@ -990,7 +990,7 @@ export function registerAffexchRoutes(app: Express) {
           paid: sum(creatorPayouts.amount),
         })
         .from(creatorPayouts)
-        .where(eq(creatorPayouts.status, "paid"))
+        .where(eq(creatorPayouts.status, "PAID"))
         .groupBy(creatorPayouts.creatorId);
 
       const pendingRows = await db
@@ -999,7 +999,7 @@ export function registerAffexchRoutes(app: Express) {
           pending: sum(creatorPayouts.amount),
         })
         .from(creatorPayouts)
-        .where(eq(creatorPayouts.status, "pending"))
+        .where(eq(creatorPayouts.status, "PENDING"))
         .groupBy(creatorPayouts.creatorId);
 
       const paidMap = new Map(paidRows.map((r) => [r.creatorId, parseFloat(r.paid ?? "0")]));
@@ -1095,7 +1095,7 @@ export function registerAffexchRoutes(app: Express) {
       if (amt > balance.available + balance.pending + 0.001) {
         return res.status(400).json({ error: `Payout exceeds available balance ($${balance.available.toFixed(2)})` });
       }
-      const status = markPaid ? "paid" : "pending";
+      const status = markPaid ? "PAID" : "PENDING";
       const [row] = await db
         .insert(creatorPayouts)
         .values({
@@ -1132,13 +1132,13 @@ export function registerAffexchRoutes(app: Express) {
       const [row] = await db
         .update(creatorPayouts)
         .set({
-          status: "paid",
+          status: "PAID",
           paidByUserId: admin.id,
           paidAt: new Date(),
           reference: typeof reference === "string" ? reference.slice(0, 200) : undefined,
           notes: typeof notes === "string" ? notes.slice(0, 2000) : undefined,
         })
-        .where(and(eq(creatorPayouts.id, req.params.id), eq(creatorPayouts.status, "pending")))
+        .where(and(eq(creatorPayouts.id, req.params.id), eq(creatorPayouts.status, "PENDING")))
         .returning();
       if (!row) return res.status(404).json({ error: "Pending payout not found" });
 
@@ -1176,8 +1176,8 @@ export function registerAffexchRoutes(app: Express) {
     try {
       const [row] = await db
         .update(creatorPayouts)
-        .set({ status: "cancelled" })
-        .where(and(eq(creatorPayouts.id, req.params.id), eq(creatorPayouts.status, "pending")))
+        .set({ status: "CANCELLED" })
+        .where(and(eq(creatorPayouts.id, req.params.id), eq(creatorPayouts.status, "PENDING")))
         .returning();
       if (!row) return res.status(404).json({ error: "Pending payout not found" });
 

@@ -964,7 +964,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdminUsers(): Promise<User[]> {
-    return db.select().from(users).where(eq(users.role, 'admin'));
+    const rows = await db.select().from(users).where(inArray(users.role, ['ADMIN', 'SUPER_ADMIN']));
+    return rows.map(normUser);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -994,6 +995,7 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     const vals: any = { ...userData };
+    if (vals.role != null) vals.role = toDbRole(vals.role);
     // old "User".name is NOT NULL — derive it if absent.
     if (vals.name == null) vals.name = deriveName(vals);
     const [user] = await db
@@ -1009,6 +1011,7 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const vals: any = { ...user, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() };
+    vals.role = toDbRole(vals.role);
     vals.name = deriveName(vals);
     const result = await db.insert(users).values(vals).returning();
     return normUser(result[0]);
@@ -1016,6 +1019,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
     const mapped: any = { ...updates, updatedAt: new Date() };
+    if (mapped.role != null) mapped.role = toDbRole(mapped.role);
     const result = await db
       .update(users)
       .set(mapped)
@@ -5290,7 +5294,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db
         .update(users)
         .set({ accountStatus: status, updatedAt: new Date() })
-        .where(and(eq(users.id, userId), eq(users.role, "creator")))
+        .where(and(eq(users.id, userId), eq(users.role, "AFFILIATE")))
         .returning();
       return result[0];
     } catch (error) {
@@ -5320,7 +5324,7 @@ export class DatabaseStorage implements IStorage {
         })
         .from(users)
         .leftJoin(creatorProfiles, eq(creatorProfiles.userId, users.id))
-        .where(eq(users.role, "creator"))
+        .where(eq(users.role, "AFFILIATE"))
         .orderBy(desc(users.createdAt));
 
       return rows.map((row) => ({
@@ -5370,8 +5374,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsersByRole(role: 'creator' | 'company' | 'admin'): Promise<User[]> {
-    const results = await db.select().from(users).where(eq(users.role, role));
-    return results;
+    const results = await db.select().from(users).where(eq(users.role, toDbRole(role) as any));
+    return results.map(normUser);
   }
 
   // Audit Logs
