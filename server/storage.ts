@@ -922,11 +922,41 @@ export interface IStorage {
   decrementAnalyticsConversions(applicationId: string, amount: number): Promise<void>;
 }
 
+// CUTOVER: the shared old "User".role enum is AFFILIATE/ADMIN/SUPER_ADMIN, but the
+// app compares lowercase app roles. Normalize on read so the rest of the app is
+// unchanged. (Writes map back via toDbRole in createUser/updateUser.)
+export function toAppRole(role: any): string {
+  switch (role) {
+    case 'AFFILIATE': return 'creator';
+    case 'ADMIN':
+    case 'SUPER_ADMIN': return 'admin';
+    default: return role ?? 'creator'; // already-lowercase app values pass through
+  }
+}
+export function toDbRole(role: any): string {
+  switch (role) {
+    case 'creator': return 'AFFILIATE';
+    case 'admin': return 'ADMIN';
+    default: return role; // admin tools may pass ADMIN/SUPER_ADMIN directly
+  }
+}
+function normUser<T>(u: T): T {
+  if (u && typeof u === 'object' && 'role' in (u as any)) {
+    (u as any).role = toAppRole((u as any).role);
+  }
+  return u;
+}
+// old "User".name is NOT NULL; derive from first/last name or username.
+function deriveName(v: any): string {
+  const full = [v?.firstName, v?.lastName].filter(Boolean).join(' ').trim();
+  return full || v?.username || v?.email || 'User';
+}
+
 export class DatabaseStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0];
+    return normUser(result[0]);
   }
 
   async getUserById(id: string): Promise<User | undefined> {
@@ -934,69 +964,68 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdminUsers(): Promise<User[]> {
-    return db.select().from(users).where(eq(users.role, 'admin'));
+    const rows = await db.select().from(users).where(inArray(users.role, ['ADMIN', 'SUPER_ADMIN', 'admin']));
+    return rows.map(normUser);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    return result[0];
+    return normUser(result[0]);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    return result[0];
+    return normUser(result[0]);
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
-    return result[0];
+    return normUser(result[0]);
   }
 
   async getUserByEmailVerificationToken(token: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.emailVerificationToken, token)).limit(1);
-    return result[0];
+    return normUser(result[0]);
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.passwordResetToken, token)).limit(1);
-    return result[0];
+    return normUser(result[0]);
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    const vals: any = { ...userData };
+    if (vals.role != null) vals.role = toDbRole(vals.role);
+    // old "User".name is NOT NULL — derive it if absent.
+    if (vals.name == null) vals.name = deriveName(vals);
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values(vals)
       .onConflictDoUpdate({
         target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
+        set: { ...vals, updatedAt: new Date() },
       })
       .returning();
-    return user;
+    return normUser(user);
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db
-      .insert(users)
-      .values({
-        ...user,
-        id: randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    return result[0];
+    const vals: any = { ...user, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() };
+    vals.role = toDbRole(vals.role);
+    vals.name = deriveName(vals);
+    const result = await db.insert(users).values(vals).returning();
+    return normUser(result[0]);
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const mapped: any = { ...updates, updatedAt: new Date() };
+    if (mapped.role != null) mapped.role = toDbRole(mapped.role);
     const result = await db
       .update(users)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(mapped)
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+    return normUser(result[0]);
   }
 
   async deleteUser(id: string): Promise<void> {
