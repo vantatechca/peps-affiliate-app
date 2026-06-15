@@ -306,27 +306,6 @@ export default function HelpAffiliatLinksGuide() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="font-semibold text-lg mb-4">Ready to Get Started?</h3>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/creator/submit-link">
-              <Button>
-                <MousePointerClick className="h-4 w-4 mr-2" />
-                Submit a Link
-              </Button>
-            </Link>
-            <Link href="/creator/links">
-              <Button variant="outline">
-                <Copy className="h-4 w-4 mr-2" />
-                View My Links
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Related Resources */}
       <div className="space-y-3">
         <h3 className="font-semibold">Continue Learning</h3>

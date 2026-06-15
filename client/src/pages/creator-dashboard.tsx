@@ -106,7 +106,7 @@ export default function CreatorDashboard() {
             label="Approved links"
             value={<span className="text-xl sm:text-2xl font-bold">{approved}</span>}
             hint={pending > 0 ? `${pending} pending review` : "No pending submissions"}
-            href="/creator/links"
+            href="/creator/milestone"
           />
           <StatCard
             icon={TrendingUp}

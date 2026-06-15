@@ -37,8 +37,6 @@ import {
   CheckCircle,
   Sparkles,
   Award,
-  Link as LinkIcon,
-  Send,
   BookOpen,
   Wallet,
 } from "lucide-react";
@@ -88,8 +86,6 @@ export function AppSidebar() {
     { title: "Promo Code", url: "/creator/promo-code", icon: Sparkles },
     { title: "Sales Tracker", url: "/creator/sales", icon: TrendingUp },
     { title: "Milestone Progress", url: "/creator/milestone", icon: Award },
-    { title: "My Links", url: "/creator/links", icon: LinkIcon },
-    { title: "Submit a Link", url: "/creator/submit-link", icon: Send },
     { title: "Payouts", url: "/creator/payouts", icon: Wallet },
     // Community Chat is reachable via the bottom-right FAB (mounted in
     // AuthenticatedLayout) — same UX as the landing page launcher.

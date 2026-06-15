@@ -11,8 +11,6 @@ import {
   CheckCircle,
   Sparkles,
   Award,
-  Link as LinkIcon,
-  Send,
   BookOpen,
   Wallet,
   X,
@@ -45,8 +43,6 @@ const CREATOR_ITEMS: Item[] = [
   { title: "Promo Code", url: "/creator/promo-code", icon: Sparkles },
   { title: "Sales Tracker", url: "/creator/sales", icon: TrendingUp },
   { title: "Milestone Progress", url: "/creator/milestone", icon: Award },
-  { title: "My Links", url: "/creator/links", icon: LinkIcon },
-  { title: "Submit a Link", url: "/creator/submit-link", icon: Send },
   { title: "Payouts", url: "/creator/payouts", icon: Wallet },
   // Community Chat — reached via bottom-right FAB on the authenticated shell.
   { title: "Guides", url: "/creator/guides", icon: BookOpen, separatorBefore: true },

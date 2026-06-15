@@ -362,14 +362,8 @@ export default function HelpSuccessStories() {
             the first step.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/creator/submit-link">
-              <Button>
-                <Target className="h-4 w-4 mr-2" />
-                Submit a Link
-              </Button>
-            </Link>
             <Link href="/">
-              <Button variant="outline">
+              <Button>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Go to Dashboard
               </Button>
