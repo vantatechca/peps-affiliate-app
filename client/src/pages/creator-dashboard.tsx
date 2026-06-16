@@ -300,8 +300,16 @@ type NearbyResp = { city: string | null; detectedCity: string | null; scope: "ci
 
 function MerchantsNearby() {
   const qc = useQueryClient();
+  const [useLocation, setUseLocation] = useState(false);
   const { data: cities = [] } = useQuery<string[]>({ queryKey: ["/api/affiliate/merchant-cities"] });
-  const { data, isLoading } = useQuery<NearbyResp>({ queryKey: ["/api/affiliate/merchants/nearby"] });
+  const { data, isLoading } = useQuery<NearbyResp>({
+    queryKey: ["/api/affiliate/merchants/nearby", useLocation ? "ip" : "saved"],
+    queryFn: async () => {
+      const r = await fetch(`/api/affiliate/merchants/nearby?limit=4${useLocation ? "&ip=1" : ""}`, { credentials: "include" });
+      if (!r.ok) throw new Error("Failed to load nearby merchants");
+      return r.json();
+    },
+  });
 
   const setCity = useMutation({
     mutationFn: async (city: string) => {
@@ -318,7 +326,9 @@ function MerchantsNearby() {
     },
   });
 
-  const scopeLabel = data?.scope === "city" && data.city ? `near ${data.city}`
+  const scopeLabel = useLocation && data?.detectedCity ? `near ${data.detectedCity}`
+    : useLocation ? `near you`
+    : data?.scope === "city" && data.city ? `near ${data.city}`
     : data?.scope === "country" ? `in your country` : `top merchants`;
 
   return (
@@ -328,7 +338,13 @@ function MerchantsNearby() {
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <Store className="h-4 w-4 text-primary" /> Merchants {scopeLabel}
           </h2>
-          <CityCombobox cities={cities} value={data?.city ?? null} onChange={(c) => setCity.mutate(c)} />
+          <CityCombobox
+            cities={cities}
+            value={useLocation ? "Your current location" : (data?.city ?? null)}
+            onChange={(c) => { setUseLocation(false); setCity.mutate(c); }}
+            currentLocationLabel="Your current location"
+            onCurrentLocation={() => setUseLocation(true)}
+          />
         </div>
 
         {isLoading ? (

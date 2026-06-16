@@ -497,9 +497,11 @@ export function registerAffexchRoutes(app: Express) {
     try {
       const user = req.user as any;
       const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? "8"), 10) || 8, 1), 50);
+      // ?ip=1 forces "your current location" — ignore saved/chosen city, use geoip.
+      const forceIp = req.query.ip === "1" || req.query.ip === "true";
 
-      let city = typeof req.query.city === "string" && req.query.city.trim() ? req.query.city.trim() : null;
-      if (!city) {
+      let city = !forceIp && typeof req.query.city === "string" && req.query.city.trim() ? req.query.city.trim() : null;
+      if (!forceIp && !city) {
         const [p] = await db
           .select({ city: creatorProfiles.city })
           .from(creatorProfiles)
@@ -508,10 +510,11 @@ export function registerAffexchRoutes(app: Express) {
         city = p?.city ?? null;
       }
 
-      // IP fallback (geoip-lite, offline) when no saved/chosen city.
+      // IP geolocation (geoip-lite, offline) — used when forcing current location
+      // or when no saved/chosen city.
       let detectedCity: string | null = null;
       let geoCountry: string | null = null;
-      if (!city) {
+      if (forceIp || !city) {
         const fwd = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim();
         const ip = fwd || req.ip || "";
         const geo = ip ? geoip.lookup(ip) : null;

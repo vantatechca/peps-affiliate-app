@@ -711,7 +711,7 @@ export async function setupAuth(app: Express) {
 
       const userId = (req.user as any).id;
 
-      const { username, firstName, lastName } = req.body;
+      const { username, firstName, lastName, email } = req.body;
 
       // Validate required fields
 
@@ -731,6 +731,22 @@ export async function setupAuth(app: Express) {
 
       }
 
+      // Optional email change (format + uniqueness). Email verification was
+      // removed in the AFFEXCH revision, so this updates directly.
+      const emailUpdate: { email?: string } = {};
+      if (typeof email === "string" && email.trim()) {
+        const e = email.trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(e)) {
+          return res.status(400).json({ error: "Please enter a valid email address" });
+        }
+        const existingEmail = await storage.getUserByEmail(e);
+        if (existingEmail && existingEmail.id !== userId) {
+          return res.status(400).json({ error: "Email is already in use" });
+        }
+        emailUpdate.email = e;
+      }
+
       // Update user
 
       const updatedUser = await storage.updateUser(userId, {
@@ -740,6 +756,8 @@ export async function setupAuth(app: Express) {
         firstName: firstName?.trim() || null,
 
         lastName: lastName?.trim() || null,
+
+        ...emailUpdate,
 
       });
 

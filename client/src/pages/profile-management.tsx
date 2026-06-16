@@ -125,6 +125,7 @@ export default function Settings() {
   const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
 
   // Creator city (used to show merchants near them). Saved instantly via the
   // affiliate city endpoint, independent of the main profile save.
@@ -249,6 +250,7 @@ export default function Settings() {
       setUsername(user.username || "");
       setFirstName(user.firstName || "");
       setLastName(user.lastName || "");
+      setEmail(user.email || "");
     }
   }, [user]);
 
@@ -1023,6 +1025,7 @@ export default function Settings() {
         username: username.trim(),
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        email: email.trim(),
       };
 
       if (!payload.username) {
@@ -1362,9 +1365,10 @@ export default function Settings() {
                       <Input
                         id="email"
                         type="email"
-                        value={user?.email || ""}
-                        disabled
-                        className="bg-muted"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={!isProfileEditMode}
+                        data-testid="input-email"
                       />
                     </div>
 
