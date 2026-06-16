@@ -105,8 +105,7 @@ export function AppSidebar() {
       ],
     },
     // Removed from AFFEXCH admin (no longer fit the flow):
-    //   Reviews, Keywords, Niches, Moderation, Messages, Platform Settings.
-    { title: "Link Approval", url: "/admin/content-links", icon: CheckCircle },
+    //   Reviews, Keywords, Niches, Moderation, Messages, Platform Settings, Link Approval.
     { title: "Payouts", url: "/admin/payouts", icon: Wallet },
     { title: "Audit Trail", url: "/admin/audit-logs", icon: ScrollText },
   ];

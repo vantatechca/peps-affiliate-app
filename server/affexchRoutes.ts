@@ -344,21 +344,19 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // DELETE /api/affiliate/promo-codes/:id — delete a code. ?deleteOrders=true also
-  // removes its attributed orders + commissions (DESTRUCTIVE, shared with old app).
+  // DELETE /api/affiliate/promo-codes/:id — delete a code. Blocked (409) if it has
+  // attributed orders; the creator should deactivate it instead.
   app.delete("/api/affiliate/promo-codes/:id", isAuthenticated, async (req: Request, res) => {
     try {
       const user = req.user as any;
       if (!user || user.role !== "creator") {
         return res.status(403).json({ error: "Affiliate role required" });
       }
-      const deleteOrders = req.query.deleteOrders === "true" || req.body?.deleteOrders === true;
-      const info = await deleteCreatorPromoCode(user.id, req.params.id, deleteOrders);
+      const info = await deleteCreatorPromoCode(user.id, req.params.id);
       res.json({ deleted: true, ...info });
     } catch (err: any) {
       const status = err?.statusCode ?? 500;
       if (status === 500) console.error("[AFFEXCH] promo-codes DELETE error:", err);
-      // 409 carries the order counts so the UI can show the warning + confirm.
       res.status(status).json({ error: err?.message || "Failed to delete promo code", info: err?.info });
     }
   });
@@ -523,7 +521,10 @@ export function registerAffexchRoutes(app: Express) {
         .where(eq(promoCodes.creatorId, user.id))
         .orderBy(desc(legacyOrders.createdAt))
         .limit(200);
-      res.json(rows.map((r) => ({ ...r, vendorLegalName: r.vendorName, vendorCity: null })));
+      res.json(rows.map((r) => {
+        const vendorName = (r.vendorName ?? "").split("|")[0].trim() || r.vendorName;
+        return { ...r, vendorName, vendorLegalName: vendorName, vendorCity: null };
+      }));
     } catch (err: any) {
       console.error("[AFFEXCH] redemptions GET error:", err);
       res.status(500).json({ error: err?.message || "Failed to list redemptions" });
@@ -1005,16 +1006,18 @@ export function registerAffexchRoutes(app: Express) {
 
       // ---- Top merchants (by gross sales) ---- grouped by store (old orders carry
       // a free-text storeName, not a vendor_profiles link).
+      // Normalize storeName (some carry a " | ref:ORD-..." suffix) to the domain.
+      const storeExpr = sql`trim(split_part(${legacyOrders.storeName}, '|', 1))`;
       const topMerchantRows = await db
         .select({
-          storeName: legacyOrders.storeName,
+          storeName: sql<string>`${storeExpr}`,
           totalSales: sum(legacyOrders.orderTotal),
           totalCommission: sum(legacyOrders.commissionEarned),
           saleCount: sql<number>`count(*)::int`,
         })
         .from(legacyOrders)
         .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
-        .groupBy(legacyOrders.storeName)
+        .groupBy(storeExpr)
         .orderBy(desc(sum(legacyOrders.orderTotal)))
         .limit(5);
 

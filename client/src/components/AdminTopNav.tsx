@@ -32,7 +32,6 @@ const ITEMS: Item[] = [
       { title: "Creators", url: "/admin/creators", icon: Users },
     ],
   },
-  { title: "Link Approval", url: "/admin/content-links", icon: CheckCircle },
   { title: "Payouts", url: "/admin/payouts", icon: Wallet },
   { title: "Audit Trail", url: "/admin/audit-logs", icon: ScrollText },
 ];
