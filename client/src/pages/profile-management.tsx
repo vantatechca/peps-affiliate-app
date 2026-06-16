@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { CityCombobox } from "../components/CityCombobox";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { uploadToCloudinary } from "../lib/cloudinary-upload";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
@@ -124,6 +125,30 @@ export default function Settings() {
   const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+
+  // Creator city (used to show merchants near them). Saved instantly via the
+  // affiliate city endpoint, independent of the main profile save.
+  const [city, setCity] = useState<string | null>(null);
+  const { data: merchantCities = [] } = useQuery<string[]>({
+    queryKey: ["/api/affiliate/merchant-cities"],
+    enabled: isAuthenticated && user?.role === "creator",
+  });
+  const { data: affiliateMe } = useQuery<{ city: string | null }>({
+    queryKey: ["/api/affiliate/me"],
+    enabled: isAuthenticated && user?.role === "creator",
+  });
+  useEffect(() => { if (affiliateMe?.city) setCity(affiliateMe.city); }, [affiliateMe?.city]);
+  const saveCity = useMutation({
+    mutationFn: async (c: string) => {
+      const r = await fetch("/api/affiliate/me/city", {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ city: c }),
+      });
+      if (!r.ok) throw new Error("Failed to save city");
+      return r.json();
+    },
+    onSuccess: (_d, c) => { setCity(c); queryClient.invalidateQueries({ queryKey: ["/api/affiliate/me"] }); },
+  });
 
   // Email change states
   const [showEmailChange, setShowEmailChange] = useState(false);
@@ -1369,6 +1394,24 @@ export default function Settings() {
                       />
                     </div>
                   </div>
+
+                  {user?.role === 'creator' && (
+                    <div className="space-y-2 mt-4">
+                      <Label>City</Label>
+                      <div>
+                        <CityCombobox
+                          cities={merchantCities}
+                          value={city}
+                          onChange={(c) => saveCity.mutate(c)}
+                          placeholder="Select your city…"
+                          className="w-full max-w-xs"
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Used to show peptide merchants near you. Saved instantly.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* COMPANY PROFILE SECTION */}

@@ -295,6 +295,20 @@ export default function AdminCreatorDetail() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3">
+              <UserIcon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="min-w-0 grid grid-cols-2 gap-x-4 gap-y-1 flex-1">
+                <div>
+                  <p className="text-xs text-muted-foreground">First name</p>
+                  <p className="text-sm">{creator.firstName || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Last name</p>
+                  <p className="text-sm">{creator.lastName || "—"}</p>
+                </div>
+              </div>
+            </div>
+            <Separator />
+            <div className="flex items-start gap-3">
               <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Email</p>
