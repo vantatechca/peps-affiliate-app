@@ -7,12 +7,16 @@ import { Badge } from "../components/ui/badge";
 import {
   Sparkles,
   TrendingUp,
+  TrendingDown,
+  Minus,
   Award,
   ArrowRight,
   CheckCircle2,
   DollarSign,
   MapPin,
+  Store,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import {
   useAffiliateMe,
@@ -168,6 +172,9 @@ export default function CreatorDashboard() {
           </CardContent>
         </Card>
 
+        {/* Merchants near you */}
+        <MerchantsNearby />
+
         {/* Earnings chart */}
         <Card>
           <CardContent className="p-4 sm:p-5">
@@ -291,4 +298,98 @@ function buildEarningsSeries(rows: Redemption[], days: number) {
     });
   }
   return out;
+}
+
+// ---- Merchants near you (dashboard strip) -------------------------------
+type NearbyMerchant = {
+  id: string; name: string; domain: string | null; website: string | null;
+  city: string | null; country: string | null;
+  level: { key: string; label: string };
+  orders: number; movement: number | null; isNew: boolean;
+};
+type NearbyResp = { city: string | null; detectedCity: string | null; scope: "city" | "country" | "all"; merchants: NearbyMerchant[] };
+
+const NEARBY_LEVEL_CLASS: Record<string, string> = {
+  super: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950 dark:text-fuchsia-400",
+  performing: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+  rising: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+  new: "bg-muted text-muted-foreground",
+};
+
+function MerchantsNearby() {
+  const qc = useQueryClient();
+  const { data: cities = [] } = useQuery<string[]>({ queryKey: ["/api/affiliate/merchant-cities"] });
+  const { data, isLoading } = useQuery<NearbyResp>({ queryKey: ["/api/affiliate/merchants/nearby"] });
+
+  const setCity = useMutation({
+    mutationFn: async (city: string) => {
+      const r = await fetch("/api/affiliate/me/city", {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ city }),
+      });
+      if (!r.ok) throw new Error("Failed to set city");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/affiliate/merchants/nearby"] });
+      qc.invalidateQueries({ queryKey: ["/api/affiliate/me"] });
+    },
+  });
+
+  const scopeLabel = data?.scope === "city" && data.city ? `near ${data.city}`
+    : data?.scope === "country" ? `in your country` : `top merchants`;
+
+  return (
+    <Card>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <Store className="h-4 w-4 text-primary" /> Merchants {scopeLabel}
+          </h2>
+          <div className="flex items-center gap-1.5 text-xs">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={data?.city ?? ""}
+              onChange={(e) => setCity.mutate(e.target.value)}
+              className="bg-background border rounded-md px-2 py-1 text-xs max-w-[180px]"
+              data-testid="merchants-city-select"
+            >
+              <option value="" disabled>Choose your city…</option>
+              {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <p className="text-xs text-muted-foreground">Loading…</p>
+        ) : !data?.merchants.length ? (
+          <p className="text-xs text-muted-foreground">No merchants found. Pick your city above.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {data.merchants.map((m) => (
+              <a
+                key={m.id}
+                href={m.website ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border bg-background hover:border-primary/50 transition-colors p-2.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-xs truncate">{m.name}</span>
+                  {m.isNew ? <span className="text-[9px] uppercase text-primary">new</span>
+                    : m.movement && m.movement > 0 ? <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                    : m.movement && m.movement < 0 ? <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+                    : <Minus className="h-3 w-3 text-muted-foreground" />}
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${NEARBY_LEVEL_CLASS[m.level.key] ?? NEARBY_LEVEL_CLASS.new}`}>{m.level.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{m.city}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

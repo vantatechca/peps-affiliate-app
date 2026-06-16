@@ -39,6 +39,7 @@ import {
   Award,
   BookOpen,
   Wallet,
+  Store,
 } from "lucide-react";
 import logoUrl from "../assets/logo.png";
 
@@ -84,6 +85,7 @@ export function AppSidebar() {
   const creatorItems: MenuItem[] = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Promo Code", url: "/creator/promo-code", icon: Sparkles },
+    { title: "Merchants", url: "/creator/merchants", icon: Store },
     { title: "Sales Tracker", url: "/creator/sales", icon: TrendingUp },
     { title: "Milestone Progress", url: "/creator/milestone", icon: Award },
     { title: "Payouts", url: "/creator/payouts", icon: Wallet },
