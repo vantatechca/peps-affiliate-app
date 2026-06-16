@@ -477,6 +477,20 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
+  // Public variant for the registration form (no auth).
+  app.get("/api/public/merchant-cities", async (_req: Request, res) => {
+    try {
+      const rows = await db
+        .selectDistinct({ city: vendorProfiles.city })
+        .from(vendorProfiles)
+        .where(sql`${vendorProfiles.city} is not null and ${vendorProfiles.city} <> ''`)
+        .orderBy(vendorProfiles.city);
+      res.json(rows.map((r) => r.city));
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || "Failed to list cities" });
+    }
+  });
+
   // GET /api/affiliate/merchants/nearby — merchants near the creator. City source:
   // ?city= → creator_profiles.city → IP geolocation. Falls back city → country → all.
   app.get("/api/affiliate/merchants/nearby", isAuthenticated, async (req: Request, res) => {

@@ -237,7 +237,7 @@ export async function setupAuth(app: Express) {
 
     try {
 
-      const { username, email, password, firstName, lastName, role, acceptTerms } = req.body;
+      const { username, email, password, firstName, lastName, role, acceptTerms, city } = req.body;
 
       // Validate inputs
 
@@ -366,6 +366,8 @@ export async function setupAuth(app: Express) {
           instagramFollowers: null,
 
           niches: [],
+
+          city: typeof city === "string" && city.trim() ? city.trim() : null,
 
         });
 

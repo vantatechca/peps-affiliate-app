@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { CityCombobox } from "../components/CityCombobox";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "../components/ui/button";
@@ -46,6 +48,10 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const passwordRequirements = validatePasswordComplexity(passwordValue);
 
+  // Optional city at signup — powers "merchants near you". Can be changed later.
+  const [city, setCity] = useState<string | null>(null);
+  const { data: cities = [] } = useQuery<string[]>({ queryKey: ["/api/public/merchant-cities"] });
+
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
@@ -74,6 +80,7 @@ export default function Register() {
           lastName: data.lastName,
           role: data.role,
           acceptTerms: data.acceptTerms,
+          city: city ?? undefined,
         }),
         credentials: "include",
       });
@@ -257,6 +264,23 @@ export default function Register() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* City (optional) */}
+                  <div className="space-y-2">
+                    <label className="text-[0.7rem] font-bold mono tracking-widest uppercase text-muted-foreground">// City</label>
+                    <div>
+                      <CityCombobox
+                        cities={cities}
+                        value={city}
+                        onChange={setCity}
+                        placeholder="Select your city (optional)"
+                        className="w-full"
+                      />
+                      <p className="text-[0.65rem] text-muted-foreground/60 mono mt-1">
+                        Shows peptide merchants near you. You can change this later.
+                      </p>
+                    </div>
                   </div>
 
                   {/* Password */}
