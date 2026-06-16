@@ -3935,11 +3935,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const companies = await storage.getAllCompanies(filters);
 
-      // CUTOVER: the old app has no merchant accounts — "merchants" are the
-      // stores that appear on orders (Order.storeName). Derive them so admin can
-      // see/search them alongside any real vendor_profiles records.
-      // Some storeName values carry a " | ref:ORD-..." suffix — normalize to the
-      // store domain so each store groups into one merchant.
+      // Sales/commission per store, keyed on the normalized order storeName
+      // (strips the " | ref:ORD-..." suffix) so each store aggregates once.
       const storeExpr = sql`trim(split_part(${legacyOrders.storeName}, '|', 1))`;
       const storeRows = await db
         .select({
@@ -3953,7 +3950,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
         .groupBy(storeExpr)
         .orderBy(sql`sum(${legacyOrders.orderTotal}) desc`);
+      const salesByDomain = new Map(storeRows.map((s) => [s.storeName, s]));
 
+      if (companies.length > 0) {
+        // Real vendor_profiles exist (imported stores) — return those, enriched
+        // with sales matched by domain. (No derived rows → no duplicates.)
+        const result = companies.map((c: any) => {
+          const s = c.domain ? salesByDomain.get(c.domain) : undefined;
+          return {
+            ...c,
+            salesCount: s?.orderCount ?? 0,
+            grossSales: parseFloat(s?.gross ?? "0"),
+            totalCommission: parseFloat(s?.commission ?? "0"),
+          };
+        });
+        const filtered = status ? result.filter((c) => c.status === status) : result;
+        console.log(`[Admin] companies/all -> ${filtered.length} merchant records`);
+        return res.json(filtered);
+      }
+
+      // Fallback (before the store CSV is imported): derive merchants from orders.
       const storeMerchants = storeRows.map((s) => ({
         id: `store:${s.storeName}`,
         legalName: s.storeName,
@@ -3969,10 +3985,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCommission: parseFloat(s.commission),
         user: null,
       }));
-
-      const combined: any[] = [...companies, ...storeMerchants];
-      const result = status ? combined.filter((c) => c.status === status) : combined;
-      console.log(`[Admin] companies/all -> ${companies.length} accounts + ${storeMerchants.length} stores`);
+      const result = status ? storeMerchants.filter((c) => c.status === status) : storeMerchants;
+      console.log(`[Admin] companies/all -> 0 records, ${storeMerchants.length} derived stores`);
       res.json(result);
     } catch (error: any) {
       res.status(500).send(error.message);
