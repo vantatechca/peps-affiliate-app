@@ -33,6 +33,9 @@ import {
   XCircle,
   Ban,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Minus,
   Calendar,
   Globe,
   ChevronLeft,
@@ -60,9 +63,34 @@ type Company = {
     email: string;
     username: string;
   };
+  // Merchant performance (added by /api/admin/companies/all)
+  city?: string | null;
+  country?: string | null;
+  salesCount?: number;
+  grossSales?: number;
+  totalCommission?: number;
+  level?: { key: string; label: string };
+  rank?: number;
+  movement?: number | null;
+  isNew?: boolean;
 };
 
-type SortField = "name" | "industry" | "status" | "joined";
+const LEVEL_CLASS: Record<string, string> = {
+  super: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300",
+  performing: "bg-amber-100 text-amber-700 border-amber-300",
+  rising: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  new: "bg-gray-100 text-gray-600 border-gray-300",
+};
+
+function MovementArrow({ m, isNew }: { m?: number | null; isNew?: boolean }) {
+  if (isNew) return <span className="text-[10px] uppercase font-semibold text-primary">new</span>;
+  if (m == null || m === 0) return <Minus className="h-3.5 w-3.5 text-gray-400" />;
+  return m > 0
+    ? <span className="inline-flex items-center text-emerald-600 text-xs font-semibold"><ArrowUp className="h-3.5 w-3.5" />{m}</span>
+    : <span className="inline-flex items-center text-rose-600 text-xs font-semibold"><ArrowDown className="h-3.5 w-3.5" />{Math.abs(m)}</span>;
+}
+
+type SortField = "name" | "industry" | "status" | "joined" | "rank";
 type SortDirection = "asc" | "desc";
 
 export default function AdminCompanies() {
@@ -72,7 +100,7 @@ export default function AdminCompanies() {
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortField, setSortField] = useState<SortField>("joined");
+  const [sortField, setSortField] = useState<SortField>("rank");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState<number>(1);
   const [addOpen, setAddOpen] = useState(false);
@@ -101,10 +129,12 @@ export default function AdminCompanies() {
     }
   }, [isAuthenticated, isLoading]);
 
+  const [metric, setMetric] = useState<"orders" | "revenue">("revenue");
+
   const { data: companies = [], isLoading: loadingCompanies } = useQuery<Company[]>({
-    queryKey: ["/api/admin/companies/all"],
+    queryKey: ["/api/admin/companies/all", metric],
     queryFn: async () => {
-      const response = await fetch("/api/admin/companies/all", { credentials: "include" });
+      const response = await fetch(`/api/admin/companies/all?metric=${metric}`, { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch companies");
       return response.json();
     },
@@ -158,6 +188,9 @@ export default function AdminCompanies() {
           break;
         case "joined":
           comparison = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+          break;
+        case "rank":
+          comparison = (a.rank ?? 1e9) - (b.rank ?? 1e9);
           break;
       }
       return sortDirection === "asc" ? comparison : -comparison;
@@ -408,6 +441,23 @@ export default function AdminCompanies() {
                 </div>
               </div>
 
+              {/* Rank-by metric toggle */}
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-xs text-gray-500 mr-1">Rank by</span>
+                {(["revenue", "orders"] as const).map((mt) => (
+                  <button
+                    key={mt}
+                    onClick={() => setMetric(mt)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-colors ${
+                      metric === mt ? "bg-primary text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    data-testid={`rank-metric-${mt}`}
+                  >
+                    {mt}
+                  </button>
+                ))}
+              </div>
+
             </div>
           </CardContent>
         </Card>
@@ -441,16 +491,16 @@ export default function AdminCompanies() {
                         <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
+                    <TableHead>Level</TableHead>
                     <TableHead>
                       <button
-                        onClick={() => handleSort("industry")}
+                        onClick={() => handleSort("rank")}
                         className="flex items-center gap-1 font-medium text-gray-700 hover:text-gray-900"
                       >
-                        Industry
+                        Performance
                         <ArrowUpDown className="h-3.5 w-3.5" />
                       </button>
                     </TableHead>
-                    <TableHead>Contact</TableHead>
                     <TableHead>
                       <button
                         onClick={() => handleSort("status")}
@@ -504,23 +554,24 @@ export default function AdminCompanies() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-gray-600">{company.industry || "-"}</span>
+                        {company.level
+                          ? <Badge variant="outline" className={`text-[10px] ${LEVEL_CLASS[company.level.key] ?? LEVEL_CLASS.new}`}>{company.level.label}</Badge>
+                          : <span className="text-sm text-gray-400">-</span>}
                       </TableCell>
                       <TableCell>
-                        <div className="min-w-0">
-                          <p
-                            className={`text-sm truncate ${company.isDeletedUser ? "line-through text-gray-400" : "text-gray-900"}`}
-                          >
-                            {company.user?.email || "-"}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">@{company.user?.username}</span>
-                            {company.isDeletedUser && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                Deleted
-                              </Badge>
-                            )}
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-400 w-7 shrink-0">#{company.rank ?? "—"}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {metric === "revenue"
+                                ? `$${(company.grossSales ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                : `${company.salesCount ?? 0} ${(company.salesCount ?? 0) === 1 ? "order" : "orders"}`}
+                            </p>
+                            <p className="text-[11px] text-gray-500">
+                              {company.salesCount ?? 0} orders · ${(company.totalCommission ?? 0).toFixed(0)} comm
+                            </p>
                           </div>
+                          <MovementArrow m={company.movement} isNew={company.isNew} />
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(company.status)}</TableCell>
