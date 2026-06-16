@@ -5,7 +5,7 @@ import {
   type Redemption,
 } from "../components/AffexchDashboardSections";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { TrendingUp, Store, DollarSign, Receipt } from "lucide-react";
+import { TrendingUp, Store, DollarSign, Receipt, Sparkles } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export default function CreatorSalesPage() {
@@ -19,7 +19,7 @@ export default function CreatorSalesPage() {
   const series = useMemo(() => buildSeries(rows, 30), [rows]);
   const hasData = series.some((d) => d.commission > 0);
 
-  const vendorBreakdown = useMemo(() => buildVendorBreakdown(rows), [rows]);
+  const codeBreakdown = useMemo(() => buildCodeBreakdown(rows), [rows]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 fx-page">
@@ -92,39 +92,36 @@ export default function CreatorSalesPage() {
         </CardContent>
       </Card>
 
-      {/* Top merchants */}
+      {/* Promo code performance */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-            <Store className="h-4 w-4 text-primary" /> Top merchants
+            <Sparkles className="h-4 w-4 text-primary" /> Promo code performance
             <span className="ml-auto text-[10px] text-muted-foreground font-normal">
-              {vendorBreakdown.length} {vendorBreakdown.length === 1 ? "merchant" : "merchants"}
+              {codeBreakdown.length} {codeBreakdown.length === 1 ? "code" : "codes"}
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {vendorBreakdown.length === 0 ? (
+          {codeBreakdown.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
-              Merchant breakdown will populate once sales are reported.
+              Your code performance will appear here once sales are reported.
             </p>
           ) : (
             <ul className="space-y-1.5">
-              {vendorBreakdown.slice(0, 8).map((v) => (
+              {codeBreakdown.map((c) => (
                 <li
-                  key={v.name}
+                  key={c.code}
                   className="flex items-center gap-2 text-xs p-2 rounded-md border bg-background"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{v.name}</div>
+                    <div className="font-mono font-medium truncate">{c.code}</div>
                     <div className="text-[10px] text-muted-foreground">
-                      {v.city ?? "Unknown city"} · {v.count} {v.count === 1 ? "sale" : "sales"}
+                      {c.count} {c.count === 1 ? "sale" : "sales"} · ${c.gross.toFixed(2)} gross
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-mono">${v.gross.toFixed(2)}</div>
-                    <div className="text-[10px] text-primary font-mono">
-                      +${v.commission.toFixed(2)}
-                    </div>
+                    <div className="text-[10px] text-primary font-mono">+${c.commission.toFixed(2)}</div>
                   </div>
                 </li>
               ))}
@@ -187,17 +184,15 @@ function buildSeries(rows: Redemption[], days: number) {
   return out;
 }
 
-function buildVendorBreakdown(rows: Redemption[]) {
-  const map = new Map<string, { name: string; city: string | null; count: number; gross: number; commission: number }>();
+function buildCodeBreakdown(rows: Redemption[]) {
+  const map = new Map<string, { code: string; count: number; gross: number; commission: number }>();
   for (const r of rows) {
-    const name = r.vendorName ?? r.vendorLegalName;
-    if (!name) continue;
-    const cur = map.get(name) ?? { name, city: r.vendorCity ?? null, count: 0, gross: 0, commission: 0 };
+    const code = r.promoCode || "—";
+    const cur = map.get(code) ?? { code, count: 0, gross: 0, commission: 0 };
     cur.count += 1;
     cur.gross += parseFloat(r.saleAmount ?? "0");
     cur.commission += parseFloat(r.commissionAmount ?? "0");
-    if (!cur.city && r.vendorCity) cur.city = r.vendorCity;
-    map.set(name, cur);
+    map.set(code, cur);
   }
-  return Array.from(map.values()).sort((a, b) => b.commission - a.commission);
+  return Array.from(map.values()).sort((a, b) => b.commission - a.commission || b.gross - a.gross);
 }

@@ -565,7 +565,9 @@ export default function AdminCompanies() {
                                 : `${company.salesCount ?? 0} ${(company.salesCount ?? 0) === 1 ? "order" : "orders"}`}
                             </p>
                             <p className="text-[11px] text-gray-500">
-                              {company.salesCount ?? 0} orders · ${(company.totalCommission ?? 0).toFixed(0)} comm
+                              {metric === "revenue"
+                                ? `${company.salesCount ?? 0} ${(company.salesCount ?? 0) === 1 ? "order" : "orders"}`
+                                : `$${(company.grossSales ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} revenue`}
                             </p>
                           </div>
                           <MovementArrow m={company.movement} isNew={company.isNew} />

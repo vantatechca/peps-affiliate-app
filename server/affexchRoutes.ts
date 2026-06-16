@@ -441,7 +441,7 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // ---- Merchants (creator-facing; level + volume + trend, no revenue) -------
+  // ---- Merchants (creator-facing; discovery only — NO level/sales/revenue/trend) ----
   const merchantForCreator = (m: any) => ({
     id: m.id,
     name: m.name,
@@ -449,10 +449,6 @@ export function registerAffexchRoutes(app: Express) {
     website: m.websiteUrl,
     city: m.city,
     country: m.country,
-    level: m.level,
-    orders: m.orders,
-    movement: m.movement,
-    isNew: m.isNew,
   });
 
   // GET /api/affiliate/merchants — all merchants (creator groups by country in UI).
@@ -1012,7 +1008,7 @@ export function registerAffexchRoutes(app: Express) {
   // admin dashboard + analytics page. Returns counts + 30-day time series +
   // top creators + top merchants in one call so the UI can render without a
   // pile of round-trips.
-  app.get("/api/admin/affexch-summary", isAuthenticated, requireAdmin, async (_req: Request, res) => {
+  app.get("/api/admin/affexch-summary", isAuthenticated, requireAdmin, async (req: Request, res) => {
     try {
       // ---- Counts ----
       // CUTOVER: old "User".role uses AFFILIATE; sales live in legacy Order tables.
@@ -1048,9 +1044,10 @@ export function registerAffexchRoutes(app: Express) {
         .from(creatorPayouts)
         .where(eq(creatorPayouts.status, "PAID"));
 
-      // ---- 30-day time series ----
+      // ---- time series (range via ?days, default 30) ----
+      const days = Math.min(Math.max(parseInt(String(req.query.days ?? "30"), 10) || 30, 7), 365);
       const since = new Date();
-      since.setDate(since.getDate() - 29);
+      since.setDate(since.getDate() - (days - 1));
       since.setHours(0, 0, 0, 0);
       const seriesRows = await db
         .select({
@@ -1065,7 +1062,7 @@ export function registerAffexchRoutes(app: Express) {
 
       const seriesMap = new Map(seriesRows.map((r) => [r.day, r]));
       const timeSeries: Array<{ date: string; label: string; sales: number; commission: number; count: number }> = [];
-      for (let i = 29; i >= 0; i--) {
+      for (let i = days - 1; i >= 0; i--) {
         const d = new Date();
         d.setHours(0, 0, 0, 0);
         d.setDate(d.getDate() - i);
@@ -1096,24 +1093,49 @@ export function registerAffexchRoutes(app: Express) {
         .orderBy(desc(sum(legacyOrderCommissions.amount)))
         .limit(5);
 
-      // ---- Top merchants (by gross sales) ---- grouped by store (old orders carry
-      // a free-text storeName, not a vendor_profiles link).
-      // Normalize storeName (some carry a " | ref:ORD-..." suffix) to the domain.
-      const storeExpr = sql`trim(split_part(${legacyOrders.storeName}, '|', 1))`;
-      const topMerchantRows = await db
-        .select({
-          storeName: sql<string>`${storeExpr}`,
-          totalSales: sum(legacyOrders.orderTotal),
-          totalCommission: sum(legacyOrders.commissionEarned),
-          saleCount: sql<number>`count(*)::int`,
-        })
-        .from(legacyOrders)
-        .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
-        .groupBy(storeExpr)
-        .orderBy(desc(sum(legacyOrders.orderTotal)))
-        .limit(5);
+      // ---- KPIs: last 30 days vs the prior 30 days (trend %) ----
+      const windowAgg = (where: ReturnType<typeof sql>) =>
+        db.select({
+          orders: sql<number>`count(*)::int`,
+          revenue: sql<string>`coalesce(sum(${legacyOrders.orderTotal}),0)`,
+          commission: sql<string>`coalesce(sum(${legacyOrders.commissionEarned}),0)`,
+        }).from(legacyOrders).where(where).then((r) => r[0]);
+      const [k30, kPrev] = await Promise.all([
+        windowAgg(sql`${legacyOrders.createdAt} >= now() - make_interval(days => 30)`),
+        windowAgg(sql`${legacyOrders.createdAt} >= now() - make_interval(days => 60) and ${legacyOrders.createdAt} < now() - make_interval(days => 30)`),
+      ]);
+      const pct = (cur: number, prev: number) => (prev > 0 ? ((cur - prev) / prev) * 100 : cur > 0 ? 100 : 0);
+      const rev30 = parseFloat(k30.revenue), revPrev = parseFloat(kPrev.revenue);
+      const com30 = parseFloat(k30.commission), comPrev = parseFloat(kPrev.commission);
+      const aov30 = k30.orders ? rev30 / k30.orders : 0;
+      const aovPrev = kPrev.orders ? revPrev / kPrev.orders : 0;
+      const kpis = {
+        revenue: { value: rev30, deltaPct: pct(rev30, revPrev) },
+        orders: { value: k30.orders, deltaPct: pct(k30.orders, kPrev.orders) },
+        commission: { value: com30, deltaPct: pct(com30, comPrev) },
+        aov: { value: aov30, deltaPct: pct(aov30, aovPrev) },
+      };
+
+      // Top merchants enriched with level + 30d movement.
+      const rankedTopMerchants = (await getRankedMerchants({ metric: "revenue" }))
+        .filter((m) => m.orders > 0)
+        .slice(0, 5)
+        .map((m) => ({
+          vendorId: m.id,
+          name: m.name,
+          domain: m.domain,
+          city: m.city,
+          country: m.country,
+          totalSales: m.revenue,
+          totalCommission: m.commission,
+          saleCount: m.orders,
+          level: m.level,
+          movement: m.movement,
+          isNew: m.isNew,
+        }));
 
       res.json({
+        kpis,
         counts: {
           creators: creatorCountRow?.count ?? 0,
           merchants: merchantCountRow?.count ?? 0,
@@ -1139,14 +1161,7 @@ export function registerAffexchRoutes(app: Express) {
           totalSales: 0,
           saleCount: r.saleCount,
         })),
-        topMerchants: topMerchantRows.map((r) => ({
-          vendorId: r.storeName,
-          name: r.storeName,
-          city: null,
-          totalSales: parseFloat(r.totalSales ?? "0"),
-          totalCommission: parseFloat(r.totalCommission ?? "0"),
-          saleCount: r.saleCount,
-        })),
+        topMerchants: rankedTopMerchants,
       });
     } catch (err: any) {
       console.error("[AFFEXCH] admin summary error:", err);
