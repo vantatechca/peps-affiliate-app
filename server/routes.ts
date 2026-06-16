@@ -10,6 +10,7 @@ import { registerAffexchRoutes } from "./affexchRoutes";
 import { registerLegacyCompatRoutes } from "./legacyCompatRoutes";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { db } from "./db";
+import { getRankedMerchants } from "./merchants";
 import { offerVideos, applications, analytics, offers, vendorProfiles, payments, retainerPayments, conversations, messages, bannedKeywords, contentFlags, companyInvoices, legacyOrders } from "../shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import express from "express";
@@ -3925,69 +3926,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all companies with filters (new comprehensive endpoint)
   app.get("/api/admin/companies/all", requireAuth, requireRole('admin'), async (req, res) => {
     try {
-      const { status, industry, startDate, endDate } = req.query;
-      const filters: any = {};
+      const status = req.query.status as string | undefined;
+      const metric = req.query.metric === "revenue" ? "revenue" : "orders";
 
-      if (status) filters.status = status;
-      if (industry) filters.industry = industry;
-      if (startDate) filters.startDate = new Date(startDate as string);
-      if (endDate) filters.endDate = new Date(endDate as string);
+      // Real merchant records (imported stores) with level + lifetime sales +
+      // rank + movement vs the prior 30-day window.
+      const ranked = await getRankedMerchants({ metric });
+      if (ranked.length > 0) {
+        let result = ranked.map((m) => ({
+          id: m.id,
+          legalName: m.name,
+          tradeName: m.name,
+          domain: m.domain,
+          industry: "Peptides",
+          websiteUrl: m.websiteUrl,
+          logoUrl: m.logoUrl,
+          status: m.status,
+          city: m.city,
+          country: m.country,
+          createdAt: m.createdAt,
+          salesCount: m.orders,
+          grossSales: m.revenue,
+          totalCommission: m.commission,
+          level: m.level,
+          rank: m.rank,
+          movement: m.movement,
+          isNew: m.isNew,
+          user: null,
+        }));
+        if (status) result = result.filter((c) => c.status === status);
+        console.log(`[Admin] companies/all -> ${result.length} merchant records (by ${metric})`);
+        return res.json(result);
+      }
 
-      const companies = await storage.getAllCompanies(filters);
-
-      // Sales/commission per store, keyed on the normalized order storeName
-      // (strips the " | ref:ORD-..." suffix) so each store aggregates once.
+      // Fallback (before the store CSV is imported): derive merchants from orders.
       const storeExpr = sql`trim(split_part(${legacyOrders.storeName}, '|', 1))`;
       const storeRows = await db
         .select({
           storeName: sql<string>`${storeExpr}`,
           orderCount: sql<number>`count(*)::int`,
           gross: sql<string>`coalesce(sum(${legacyOrders.orderTotal}),0)`,
-          commission: sql<string>`coalesce(sum(${legacyOrders.commissionEarned}),0)`,
           firstAt: sql<string>`min(${legacyOrders.createdAt})`,
         })
         .from(legacyOrders)
         .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
         .groupBy(storeExpr)
         .orderBy(sql`sum(${legacyOrders.orderTotal}) desc`);
-      const salesByDomain = new Map(storeRows.map((s) => [s.storeName, s]));
-
-      if (companies.length > 0) {
-        // Real vendor_profiles exist (imported stores) — return those, enriched
-        // with sales matched by domain. (No derived rows → no duplicates.)
-        const result = companies.map((c: any) => {
-          const s = c.domain ? salesByDomain.get(c.domain) : undefined;
-          return {
-            ...c,
-            salesCount: s?.orderCount ?? 0,
-            grossSales: parseFloat(s?.gross ?? "0"),
-            totalCommission: parseFloat(s?.commission ?? "0"),
-          };
-        });
-        const filtered = status ? result.filter((c) => c.status === status) : result;
-        console.log(`[Admin] companies/all -> ${filtered.length} merchant records`);
-        return res.json(filtered);
-      }
-
-      // Fallback (before the store CSV is imported): derive merchants from orders.
       const storeMerchants = storeRows.map((s) => ({
         id: `store:${s.storeName}`,
         legalName: s.storeName,
         tradeName: s.storeName,
         industry: "Peptides",
-        websiteUrl: /^https?:\/\//.test(s.storeName ?? "") ? s.storeName : `https://${s.storeName}`,
+        websiteUrl: `https://${s.storeName}`,
         logoUrl: null,
         status: "approved",
         createdAt: s.firstAt,
-        approvedAt: s.firstAt,
         salesCount: s.orderCount,
         grossSales: parseFloat(s.gross),
-        totalCommission: parseFloat(s.commission),
         user: null,
       }));
-      const result = status ? storeMerchants.filter((c) => c.status === status) : storeMerchants;
-      console.log(`[Admin] companies/all -> 0 records, ${storeMerchants.length} derived stores`);
-      res.json(result);
+      res.json(status ? storeMerchants.filter((c) => c.status === status) : storeMerchants);
     } catch (error: any) {
       res.status(500).send(error.message);
     }

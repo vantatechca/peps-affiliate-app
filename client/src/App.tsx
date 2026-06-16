@@ -38,6 +38,7 @@ import NotFound from "./pages/not-found";
 import Landing from "./pages/landing";
 import CreatorDashboard from "./pages/creator-dashboard";
 import CreatorPromoCodePage from "./pages/creator-promo-code";
+import CreatorMerchantsPage from "./pages/creator-merchants";
 import CreatorSalesPage from "./pages/creator-sales";
 import CreatorMilestonePage from "./pages/creator-milestone";
 import CreatorGuidesPage from "./pages/creator-guides";
@@ -301,6 +302,7 @@ function ProtectedRouter() {
               <Route path="/" component={CreatorDashboard} />
               <Route path="/creator/dashboard" component={CreatorDashboard} />
               <Route path="/creator/promo-code" component={CreatorPromoCodePage} />
+              <Route path="/creator/merchants" component={CreatorMerchantsPage} />
               <Route path="/creator/sales" component={CreatorSalesPage} />
               <Route path="/creator/milestone" component={CreatorMilestonePage} />
               <Route path="/creator/payouts" component={CreatorPayoutsPage} />

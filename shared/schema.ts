@@ -209,6 +209,8 @@ export const vendorProfiles = pgTable("vendor_profiles", {
   userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
   legalName: varchar("legal_name").notNull(),
   tradeName: varchar("trade_name"),
+  // CSV-imported store domain (e.g. floridapeptideslab.com); links to Order.storeName.
+  domain: varchar("domain"),
   industry: varchar("industry"),
   websiteUrl: varchar("website_url"),
   companySize: varchar("company_size"),

@@ -7,6 +7,8 @@ import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfile
 import { eq, and, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { getCreatorPromoCode, setCreatorPromoCode, listCreatorPromoCodes, createCreatorPromoCode, setPromoCodeActive, getPromoCodeDeletionInfo, deleteCreatorPromoCode } from "./affexchPromoCode";
+import { getRankedMerchants } from "./merchants";
+import geoip from "geoip-lite";
 import { NotificationService } from "./notifications/notificationService";
 import { storage } from "./storage";
 
@@ -436,6 +438,96 @@ export function registerAffexchRoutes(app: Express) {
     } catch (err: any) {
       console.error("[AFFEXCH] offers GET error:", err);
       res.status(500).json({ error: err?.message || "Failed to list offers" });
+    }
+  });
+
+  // ---- Merchants (creator-facing; level + volume + trend, no revenue) -------
+  const merchantForCreator = (m: any) => ({
+    id: m.id,
+    name: m.name,
+    domain: m.domain,
+    website: m.websiteUrl,
+    city: m.city,
+    country: m.country,
+    level: m.level,
+    orders: m.orders,
+    movement: m.movement,
+    isNew: m.isNew,
+  });
+
+  // GET /api/affiliate/merchants — all merchants (creator groups by country in UI).
+  app.get("/api/affiliate/merchants", isAuthenticated, async (_req: Request, res) => {
+    try {
+      const ranked = await getRankedMerchants({ metric: "orders" });
+      res.json(ranked.map(merchantForCreator));
+    } catch (err: any) {
+      console.error("[AFFEXCH] merchants GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to list merchants" });
+    }
+  });
+
+  // GET /api/affiliate/merchant-cities — distinct cities (for the city dropdown).
+  app.get("/api/affiliate/merchant-cities", isAuthenticated, async (_req: Request, res) => {
+    try {
+      const rows = await db
+        .selectDistinct({ city: vendorProfiles.city })
+        .from(vendorProfiles)
+        .where(sql`${vendorProfiles.city} is not null and ${vendorProfiles.city} <> ''`)
+        .orderBy(vendorProfiles.city);
+      res.json(rows.map((r) => r.city));
+    } catch (err: any) {
+      console.error("[AFFEXCH] merchant-cities error:", err);
+      res.status(500).json({ error: err?.message || "Failed to list cities" });
+    }
+  });
+
+  // GET /api/affiliate/merchants/nearby — merchants near the creator. City source:
+  // ?city= → creator_profiles.city → IP geolocation. Falls back city → country → all.
+  app.get("/api/affiliate/merchants/nearby", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? "8"), 10) || 8, 1), 50);
+
+      let city = typeof req.query.city === "string" && req.query.city.trim() ? req.query.city.trim() : null;
+      if (!city) {
+        const [p] = await db
+          .select({ city: creatorProfiles.city })
+          .from(creatorProfiles)
+          .where(eq(creatorProfiles.userId, user.id))
+          .limit(1);
+        city = p?.city ?? null;
+      }
+
+      // IP fallback (geoip-lite, offline) when no saved/chosen city.
+      let detectedCity: string | null = null;
+      let geoCountry: string | null = null;
+      if (!city) {
+        const fwd = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim();
+        const ip = fwd || req.ip || "";
+        const geo = ip ? geoip.lookup(ip) : null;
+        detectedCity = geo?.city || null;
+        geoCountry = geo?.country === "US" ? "United States" : geo?.country === "CA" ? "Canada" : null;
+        city = detectedCity;
+      }
+
+      const ranked = await getRankedMerchants({ metric: "orders" });
+      const lc = city?.toLowerCase();
+      let near = lc ? ranked.filter((m) => m.city && m.city.toLowerCase() === lc) : [];
+      let scope: "city" | "country" | "all" = near.length ? "city" : "all";
+      if (!near.length) {
+        const country = geoCountry
+          ?? (lc ? ranked.find((m) => m.city?.toLowerCase() === lc)?.country : null)
+          ?? null;
+        if (country) {
+          near = ranked.filter((m) => m.country === country);
+          scope = near.length ? "country" : "all";
+        }
+      }
+      const merchants = (near.length ? near : ranked).slice(0, limit).map(merchantForCreator);
+      res.json({ city, detectedCity, scope, merchants });
+    } catch (err: any) {
+      console.error("[AFFEXCH] merchants/nearby error:", err);
+      res.status(500).json({ error: err?.message || "Failed to load nearby merchants" });
     }
   });
 
