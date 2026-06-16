@@ -22,7 +22,7 @@ export default function CreatorPromoCodePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-4 fx-page">
       <header>
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground fx-text-in fx-text-glow"><span className="fx-text-sweep">Promo Code</span><span className="fx-caret ml-1">_</span></h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground fx-text-in fx-text-glow"><span className="fx-text-sweep">Promo Code</span><span className="fx-caret ml-1">_</span></h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1 fx-slide-up fx-delay-2">
           Your unique code for audiences to redeem at checkout on peptide merchant sites.
         </p>

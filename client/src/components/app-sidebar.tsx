@@ -149,7 +149,7 @@ export function AppSidebar() {
             {user?.role === 'admin' ? 'Admin Panel' : 'Creator Portal'}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="fx-stagger">
+            <SidebarMenu className="fx-stagger gap-1.5 [&_span]:text-[15px] [&_span]:font-medium [&_svg]:!size-5">
               {menuItems.map((item) => {
                 const hasChildren = "children" in item && Array.isArray((item as GroupItem).children);
                 const leaf = item as LeafItem;
@@ -245,7 +245,7 @@ export function AppSidebar() {
                     {sep}
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        size={isCreator ? "sm" : "default"}
+                        size="default"
                         tooltip={item.title}
                         className="hover:bg-transparent hover:text-primary hover:font-bold transition-all duration-200"
                         data-testid={`nav-${item.title.toLowerCase().replace(/\s/g, '-')}`}
@@ -266,7 +266,7 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
-                      size={isCreator ? "sm" : "default"}
+                      size="default"
                       isActive={isActive}
                       tooltip={item.title}
                       className="hover:bg-transparent hover:text-primary hover:font-bold data-[active=true]:bg-transparent data-[active=true]:text-primary transition-all duration-200"

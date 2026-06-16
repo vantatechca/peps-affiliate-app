@@ -6,7 +6,7 @@ import { db, pool } from "./db";
 import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, communityChatMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
 import { eq, and, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
-import { getCreatorPromoCode, setCreatorPromoCode, listCreatorPromoCodes, createCreatorPromoCode } from "./affexchPromoCode";
+import { getCreatorPromoCode, setCreatorPromoCode, listCreatorPromoCodes, createCreatorPromoCode, setPromoCodeActive, getPromoCodeDeletionInfo, deleteCreatorPromoCode } from "./affexchPromoCode";
 import { NotificationService } from "./notifications/notificationService";
 import { storage } from "./storage";
 
@@ -306,6 +306,60 @@ export function registerAffexchRoutes(app: Express) {
       const status = err?.statusCode ?? 500;
       if (status === 500) console.error("[AFFEXCH] promo-codes POST error:", err);
       res.status(status).json({ error: err?.message || "Failed to create promo code" });
+    }
+  });
+
+  // PATCH /api/affiliate/promo-codes/:id — activate/deactivate a code.
+  app.patch("/api/affiliate/promo-codes/:id", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const { active } = req.body ?? {};
+      if (typeof active !== "boolean") {
+        return res.status(400).json({ error: "active (boolean) is required" });
+      }
+      const row = await setPromoCodeActive(user.id, req.params.id, active);
+      res.json(row);
+    } catch (err: any) {
+      const status = err?.statusCode ?? 500;
+      if (status === 500) console.error("[AFFEXCH] promo-codes PATCH error:", err);
+      res.status(status).json({ error: err?.message || "Failed to update promo code" });
+    }
+  });
+
+  // GET /api/affiliate/promo-codes/:id/deletion-info — counts for the delete prompt.
+  app.get("/api/affiliate/promo-codes/:id/deletion-info", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      res.json(await getPromoCodeDeletionInfo(user.id, req.params.id));
+    } catch (err: any) {
+      const status = err?.statusCode ?? 500;
+      if (status === 500) console.error("[AFFEXCH] promo-codes deletion-info error:", err);
+      res.status(status).json({ error: err?.message || "Failed to load deletion info" });
+    }
+  });
+
+  // DELETE /api/affiliate/promo-codes/:id — delete a code. ?deleteOrders=true also
+  // removes its attributed orders + commissions (DESTRUCTIVE, shared with old app).
+  app.delete("/api/affiliate/promo-codes/:id", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const deleteOrders = req.query.deleteOrders === "true" || req.body?.deleteOrders === true;
+      const info = await deleteCreatorPromoCode(user.id, req.params.id, deleteOrders);
+      res.json({ deleted: true, ...info });
+    } catch (err: any) {
+      const status = err?.statusCode ?? 500;
+      if (status === 500) console.error("[AFFEXCH] promo-codes DELETE error:", err);
+      // 409 carries the order counts so the UI can show the warning + confirm.
+      res.status(status).json({ error: err?.message || "Failed to delete promo code", info: err?.info });
     }
   });
 

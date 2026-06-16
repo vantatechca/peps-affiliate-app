@@ -17,6 +17,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import {
   useAffiliateMe,
   useAffiliateRedemptions,
+  useAffiliatePromoCodes,
   type AffiliateMe,
   type Redemption,
 } from "../components/AffexchDashboardSections";
@@ -54,6 +55,7 @@ export default function CreatorDashboard() {
 
   const { data: me } = useAffiliateMe();
   const { data: redemptions } = useAffiliateRedemptions();
+  const { data: promoCodes } = useAffiliatePromoCodes();
 
   const totalCommission = (redemptions ?? []).reduce(
     (s, r) => s + parseFloat(r.commissionAmount ?? "0"),
@@ -78,7 +80,7 @@ export default function CreatorDashboard() {
       <div className="max-w-[1200px] mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground fx-text-in fx-text-glow">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground fx-text-in fx-text-glow">
             <span className="fx-text-sweep">Welcome back, {user?.firstName || "Creator"}!</span><span className="fx-caret ml-1">_</span>
           </h1>
           <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 fx-slide-up fx-delay-2">
@@ -133,11 +135,24 @@ export default function CreatorDashboard() {
           <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                <Sparkles className="h-3.5 w-3.5 text-primary" /> Your Promo Code
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> {promoCodes && promoCodes.length > 1 ? "Your Promo Codes" : "Your Promo Code"}
               </div>
-              <div className="font-mono text-xl sm:text-2xl font-bold tracking-wider text-foreground select-all truncate">
-                {me?.promoCode ?? "—"}
-              </div>
+              {promoCodes && promoCodes.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {promoCodes.map((c) => (
+                    <span
+                      key={c.id}
+                      className={`font-mono text-lg sm:text-xl font-bold tracking-wider px-2.5 py-1 rounded-md border bg-muted select-all ${c.status === "active" ? "text-foreground" : "text-muted-foreground line-through decoration-1"}`}
+                    >
+                      {c.code}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="font-mono text-xl sm:text-2xl font-bold tracking-wider text-foreground select-all truncate">
+                  {me?.promoCode ?? "—"}
+                </div>
+              )}
               {city && (
                 <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
                   <MapPin className="h-3 w-3" /> {city}

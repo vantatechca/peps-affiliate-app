@@ -83,7 +83,7 @@ export default function CreatorPayoutsPage() {
     <div className="max-w-4xl mx-auto space-y-4 fx-page">
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground fx-text-in fx-text-glow"><span className="fx-text-sweep">Payouts</span><span className="fx-caret ml-1">_</span></h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground fx-text-in fx-text-glow"><span className="fx-text-sweep">Payouts</span><span className="fx-caret ml-1">_</span></h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 fx-slide-up fx-delay-2">
             Request your accrued commission. Admin reviews and sends the money via your saved method.
           </p>
