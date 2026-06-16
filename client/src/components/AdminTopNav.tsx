@@ -49,14 +49,14 @@ export function AdminTopNav() {
             <DropdownMenu key={item.title}>
               <DropdownMenuTrigger asChild>
                 <button
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium mono tracking-wide transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium mono tracking-wide transition-colors whitespace-nowrap ${
                     isActive
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-primary hover:bg-primary/5"
                   }`}
                   data-testid={`adminnav-${item.title.toLowerCase()}`}
                 >
-                  <item.icon className="h-3.5 w-3.5" />
+                  <item.icon className="h-4 w-4" />
                   {item.title}
                   <ChevronDown className="h-3 w-3" />
                 </button>
@@ -86,13 +86,13 @@ export function AdminTopNav() {
             key={item.url}
             href={item.url}
             data-testid={`adminnav-${item.title.toLowerCase().replace(/\s/g, "-")}`}
-            className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium mono tracking-wide transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium mono tracking-wide transition-colors whitespace-nowrap ${
               isActive
                 ? "text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-primary hover:bg-primary/5"
             }`}
           >
-            <item.icon className="h-3.5 w-3.5" />
+            <item.icon className="h-4 w-4" />
             {item.title}
           </Link>
         );

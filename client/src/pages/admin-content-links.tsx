@@ -146,7 +146,7 @@ export default function AdminContentLinks() {
     <div className="min-h-screen bg-background fx-page">
       <div className="max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 space-y-4">
         <div>
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground fx-text-in fx-text-glow">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground fx-text-in fx-text-glow">
             <span className="fx-text-sweep">Content Link Approval</span><span className="fx-caret ml-1">_</span>
           </h1>
           <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 fx-slide-up fx-delay-2">
