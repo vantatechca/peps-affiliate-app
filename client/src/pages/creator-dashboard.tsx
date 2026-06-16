@@ -95,25 +95,14 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Stat strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 fx-stagger fx-cards">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 fx-stagger fx-cards">
           <StatCard
             icon={Award}
             label="Tier"
             value={
               <Badge className={`text-[10px] ${TIER_BADGE_CLASS[tier]}`}>{TIER_LABEL[tier]}</Badge>
             }
-            hint={
-              me?.nextTier
-                ? `${me.nextTier.remaining} link${me.nextTier.remaining === 1 ? "" : "s"} to ${TIER_LABEL[me.nextTier.tier as AffiliateMe["tier"]]}`
-                : "Top tier reached"
-            }
-            href="/creator/milestone"
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="Approved links"
-            value={<span className="text-xl sm:text-2xl font-bold">{approved}</span>}
-            hint={pending > 0 ? `${pending} pending review` : "No pending submissions"}
+            hint="Affiliate tier"
             href="/creator/milestone"
           />
           <StatCard
@@ -302,21 +291,12 @@ function buildEarningsSeries(rows: Redemption[], days: number) {
   return out;
 }
 
-// ---- Merchants near you (dashboard strip) -------------------------------
+// ---- Merchants near you (dashboard strip) — discovery only, no sales/level ----
 type NearbyMerchant = {
   id: string; name: string; domain: string | null; website: string | null;
   city: string | null; country: string | null;
-  level: { key: string; label: string };
-  orders: number; movement: number | null; isNew: boolean;
 };
 type NearbyResp = { city: string | null; detectedCity: string | null; scope: "city" | "country" | "all"; merchants: NearbyMerchant[] };
-
-const NEARBY_LEVEL_CLASS: Record<string, string> = {
-  super: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950 dark:text-fuchsia-400",
-  performing: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-  rising: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-  new: "bg-muted text-muted-foreground",
-};
 
 function MerchantsNearby() {
   const qc = useQueryClient();
@@ -363,21 +343,12 @@ function MerchantsNearby() {
                 href={m.website ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-md border bg-background hover:border-primary/50 transition-colors p-2.5"
+                className="rounded-md border bg-background hover:border-primary/50 transition-colors p-2.5 flex items-center gap-2"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 min-w-0">
-                    <MerchantLogo domain={m.domain} name={m.name} className="h-6 w-6 rounded shrink-0 text-[10px]" />
-                    <span className="font-medium text-xs truncate">{m.name}</span>
-                  </span>
-                  {m.isNew ? <span className="text-[9px] uppercase text-primary">new</span>
-                    : m.movement && m.movement > 0 ? <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                    : m.movement && m.movement < 0 ? <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
-                    : <Minus className="h-3 w-3 text-muted-foreground" />}
-                </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${NEARBY_LEVEL_CLASS[m.level.key] ?? NEARBY_LEVEL_CLASS.new}`}>{m.level.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{m.city}</span>
+                <MerchantLogo domain={m.domain} name={m.name} className="h-8 w-8 rounded shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium text-xs truncate">{m.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{m.city}</p>
                 </div>
               </a>
             ))}

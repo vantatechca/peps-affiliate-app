@@ -441,7 +441,7 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // ---- Merchants (creator-facing; level + volume + trend, no revenue) -------
+  // ---- Merchants (creator-facing; discovery only — NO level/sales/revenue/trend) ----
   const merchantForCreator = (m: any) => ({
     id: m.id,
     name: m.name,
@@ -449,10 +449,6 @@ export function registerAffexchRoutes(app: Express) {
     website: m.websiteUrl,
     city: m.city,
     country: m.country,
-    level: m.level,
-    orders: m.orders,
-    movement: m.movement,
-    isNew: m.isNew,
   });
 
   // GET /api/affiliate/merchants — all merchants (creator groups by country in UI).
