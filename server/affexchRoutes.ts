@@ -444,23 +444,31 @@ export function registerAffexchRoutes(app: Express) {
       if (!user || user.role !== "creator") {
         return res.status(403).json({ error: "Affiliate role required" });
       }
-      // CUTOVER: a creator's redemptions = their rows in the OrderCommission
-      // ledger, joined to the Order for sale amount / store / date.
+      // CUTOVER: show ALL sales attributed to ANY of the creator's codes —
+      // every Order whose discount code belongs to them (covers creators with
+      // multiple codes). Commission = their OrderCommission ledger entry for the
+      // order if present, else the order's commissionEarned.
       const rows = await db
         .select({
-          id: legacyOrderCommissions.id,
+          id: legacyOrders.id,
           saleAmount: legacyOrders.orderTotal,
-          commissionAmount: legacyOrderCommissions.amount,
+          commissionAmount: sql<string>`coalesce(${legacyOrderCommissions.amount}, ${legacyOrders.commissionEarned}, '0')`,
           redeemedAt: legacyOrders.createdAt,
           vendorName: legacyOrders.storeName,
           promoCode: promoCodes.code,
         })
-        .from(legacyOrderCommissions)
-        .innerJoin(legacyOrders, eq(legacyOrderCommissions.orderId, legacyOrders.id))
-        .leftJoin(promoCodes, eq(legacyOrders.promoCodeId, promoCodes.id))
-        .where(eq(legacyOrderCommissions.recipientUserId, user.id))
+        .from(legacyOrders)
+        .innerJoin(promoCodes, eq(legacyOrders.promoCodeId, promoCodes.id))
+        .leftJoin(
+          legacyOrderCommissions,
+          and(
+            eq(legacyOrderCommissions.orderId, legacyOrders.id),
+            eq(legacyOrderCommissions.recipientUserId, user.id),
+          ),
+        )
+        .where(eq(promoCodes.creatorId, user.id))
         .orderBy(desc(legacyOrders.createdAt))
-        .limit(100);
+        .limit(200);
       res.json(rows.map((r) => ({ ...r, vendorLegalName: r.vendorName, vendorCity: null })));
     } catch (err: any) {
       console.error("[AFFEXCH] redemptions GET error:", err);
