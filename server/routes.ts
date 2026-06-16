@@ -10,7 +10,7 @@ import { registerAffexchRoutes } from "./affexchRoutes";
 import { registerLegacyCompatRoutes } from "./legacyCompatRoutes";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { db } from "./db";
-import { offerVideos, applications, analytics, offers, vendorProfiles, payments, retainerPayments, conversations, messages, bannedKeywords, contentFlags, companyInvoices } from "../shared/schema";
+import { offerVideos, applications, analytics, offers, vendorProfiles, payments, retainerPayments, conversations, messages, bannedKeywords, contentFlags, companyInvoices, legacyOrders } from "../shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import express from "express";
 import { z } from "zod";
@@ -3934,8 +3934,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (endDate) filters.endDate = new Date(endDate as string);
 
       const companies = await storage.getAllCompanies(filters);
-      console.log(`[Admin] Found ${companies.length} companies. IDs: ${companies.map(c => c.id).join(', ')}`);
-      res.json(companies);
+
+      // CUTOVER: the old app has no merchant accounts — "merchants" are the
+      // stores that appear on orders (Order.storeName). Derive them so admin can
+      // see/search them alongside any real vendor_profiles records.
+      // Some storeName values carry a " | ref:ORD-..." suffix — normalize to the
+      // store domain so each store groups into one merchant.
+      const storeExpr = sql`trim(split_part(${legacyOrders.storeName}, '|', 1))`;
+      const storeRows = await db
+        .select({
+          storeName: sql<string>`${storeExpr}`,
+          orderCount: sql<number>`count(*)::int`,
+          gross: sql<string>`coalesce(sum(${legacyOrders.orderTotal}),0)`,
+          commission: sql<string>`coalesce(sum(${legacyOrders.commissionEarned}),0)`,
+          firstAt: sql<string>`min(${legacyOrders.createdAt})`,
+        })
+        .from(legacyOrders)
+        .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
+        .groupBy(storeExpr)
+        .orderBy(sql`sum(${legacyOrders.orderTotal}) desc`);
+
+      const storeMerchants = storeRows.map((s) => ({
+        id: `store:${s.storeName}`,
+        legalName: s.storeName,
+        tradeName: s.storeName,
+        industry: "Peptides",
+        websiteUrl: /^https?:\/\//.test(s.storeName ?? "") ? s.storeName : `https://${s.storeName}`,
+        logoUrl: null,
+        status: "approved",
+        createdAt: s.firstAt,
+        approvedAt: s.firstAt,
+        salesCount: s.orderCount,
+        grossSales: parseFloat(s.gross),
+        totalCommission: parseFloat(s.commission),
+        user: null,
+      }));
+
+      const combined: any[] = [...companies, ...storeMerchants];
+      const result = status ? combined.filter((c) => c.status === status) : combined;
+      console.log(`[Admin] companies/all -> ${companies.length} accounts + ${storeMerchants.length} stores`);
+      res.json(result);
     } catch (error: any) {
       res.status(500).send(error.message);
     }

@@ -521,7 +521,10 @@ export function registerAffexchRoutes(app: Express) {
         .where(eq(promoCodes.creatorId, user.id))
         .orderBy(desc(legacyOrders.createdAt))
         .limit(200);
-      res.json(rows.map((r) => ({ ...r, vendorLegalName: r.vendorName, vendorCity: null })));
+      res.json(rows.map((r) => {
+        const vendorName = (r.vendorName ?? "").split("|")[0].trim() || r.vendorName;
+        return { ...r, vendorName, vendorLegalName: vendorName, vendorCity: null };
+      }));
     } catch (err: any) {
       console.error("[AFFEXCH] redemptions GET error:", err);
       res.status(500).json({ error: err?.message || "Failed to list redemptions" });
@@ -1003,16 +1006,18 @@ export function registerAffexchRoutes(app: Express) {
 
       // ---- Top merchants (by gross sales) ---- grouped by store (old orders carry
       // a free-text storeName, not a vendor_profiles link).
+      // Normalize storeName (some carry a " | ref:ORD-..." suffix) to the domain.
+      const storeExpr = sql`trim(split_part(${legacyOrders.storeName}, '|', 1))`;
       const topMerchantRows = await db
         .select({
-          storeName: legacyOrders.storeName,
+          storeName: sql<string>`${storeExpr}`,
           totalSales: sum(legacyOrders.orderTotal),
           totalCommission: sum(legacyOrders.commissionEarned),
           saleCount: sql<number>`count(*)::int`,
         })
         .from(legacyOrders)
         .where(sql`${legacyOrders.storeName} is not null and ${legacyOrders.storeName} <> ''`)
-        .groupBy(legacyOrders.storeName)
+        .groupBy(storeExpr)
         .orderBy(desc(sum(legacyOrders.orderTotal)))
         .limit(5);
 
