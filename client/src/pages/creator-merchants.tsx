@@ -4,6 +4,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Store, ExternalLink, MapPin, TrendingUp, TrendingDown, Minus, Sparkles } from "lucide-react";
+import { MerchantLogo } from "../components/MerchantLogo";
 
 type Level = { key: string; label: string; ordersToNext: number | null; nextLabel: string | null };
 type Merchant = {
@@ -83,11 +84,14 @@ export default function CreatorMerchantsPage() {
                   data-testid={`merchant-${m.domain ?? m.id}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{m.name}</p>
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
-                        <MapPin className="h-3 w-3 shrink-0" /> {m.city || "—"}
-                      </p>
+                    <div className="flex items-start gap-2 min-w-0">
+                      <MerchantLogo domain={m.domain} name={m.name} className="h-9 w-9 rounded-md shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{m.name}</p>
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+                          <MapPin className="h-3 w-3 shrink-0" /> {m.city || "—"}
+                        </p>
+                      </div>
                     </div>
                     <Trend m={m} />
                   </div>
@@ -108,7 +112,7 @@ export default function CreatorMerchantsPage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Store className="h-5 w-5 text-primary" /> {selected.name}
+                  <MerchantLogo domain={selected.domain} name={selected.name} className="h-8 w-8 rounded-md" /> {selected.name}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 text-sm">

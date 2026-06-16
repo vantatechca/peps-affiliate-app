@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { MerchantLogo } from "../components/MerchantLogo";
 import {
   Table,
   TableBody,
@@ -64,6 +65,7 @@ type Company = {
     username: string;
   };
   // Merchant performance (added by /api/admin/companies/all)
+  domain?: string | null;
   city?: string | null;
   country?: string | null;
   salesCount?: number;
@@ -527,12 +529,7 @@ export default function AdminCompanies() {
                     <TableRow key={company.id} className="hover:bg-gray-50 cursor-pointer">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 rounded-lg border">
-                            <AvatarImage src={company.logoUrl} alt={company.legalName} className="object-cover" />
-                            <AvatarFallback className="rounded-lg bg-gray-100 text-gray-600">
-                              <Building2 className="h-5 w-5" />
-                            </AvatarFallback>
-                          </Avatar>
+                          <MerchantLogo domain={company.domain} name={company.legalName} className="h-10 w-10 rounded-lg shrink-0" />
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 truncate">{company.legalName}</p>
                             {company.tradeName && company.tradeName !== company.legalName && (
@@ -637,12 +634,7 @@ export default function AdminCompanies() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 rounded-lg border">
-                        <AvatarImage src={company.logoUrl} alt={company.legalName} className="object-cover" />
-                        <AvatarFallback className="rounded-lg bg-gray-100 text-gray-600">
-                          <Building2 className="h-6 w-6" />
-                        </AvatarFallback>
-                      </Avatar>
+                      <MerchantLogo domain={company.domain} name={company.legalName} className="h-12 w-12 rounded-lg shrink-0" />
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-900 truncate">{company.legalName}</p>
                         {company.tradeName && company.tradeName !== company.legalName && (

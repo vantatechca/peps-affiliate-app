@@ -26,6 +26,8 @@ import {
   type Redemption,
 } from "../components/AffexchDashboardSections";
 import { AffexchBootLoader } from "../components/AffexchBootLoader";
+import { CityCombobox } from "../components/CityCombobox";
+import { MerchantLogo } from "../components/MerchantLogo";
 
 const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
   pending: "Pending",
@@ -346,18 +348,7 @@ function MerchantsNearby() {
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <Store className="h-4 w-4 text-primary" /> Merchants {scopeLabel}
           </h2>
-          <div className="flex items-center gap-1.5 text-xs">
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-            <select
-              value={data?.city ?? ""}
-              onChange={(e) => setCity.mutate(e.target.value)}
-              className="bg-background border rounded-md px-2 py-1 text-xs max-w-[180px]"
-              data-testid="merchants-city-select"
-            >
-              <option value="" disabled>Choose your city…</option>
-              {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
+          <CityCombobox cities={cities} value={data?.city ?? null} onChange={(c) => setCity.mutate(c)} />
         </div>
 
         {isLoading ? (
@@ -375,7 +366,10 @@ function MerchantsNearby() {
                 className="rounded-md border bg-background hover:border-primary/50 transition-colors p-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-xs truncate">{m.name}</span>
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <MerchantLogo domain={m.domain} name={m.name} className="h-6 w-6 rounded shrink-0 text-[10px]" />
+                    <span className="font-medium text-xs truncate">{m.name}</span>
+                  </span>
                   {m.isNew ? <span className="text-[9px] uppercase text-primary">new</span>
                     : m.movement && m.movement > 0 ? <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                     : m.movement && m.movement < 0 ? <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
