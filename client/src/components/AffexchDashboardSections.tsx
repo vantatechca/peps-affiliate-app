@@ -21,6 +21,9 @@ import {
   ExternalLink,
   Pencil,
   X,
+  PauseCircle,
+  PlayCircle,
+  Trash2,
 } from "lucide-react";
 
 // Customers redeem the creator's code for this discount at checkout. Codes are
@@ -125,7 +128,7 @@ const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
 export function useAffiliateMe() {
   return useQuery<AffiliateMe>({ queryKey: ["/api/affiliate/me"] });
 }
-export type PromoCodeRow = { id: string; code: string; status: string; createdAt: string | null };
+export type PromoCodeRow = { id: string; code: string; status: string; active: boolean | null; createdAt: string | null; orderCount: number };
 export function useAffiliatePromoCodes() {
   return useQuery<PromoCodeRow[]>({ queryKey: ["/api/affiliate/promo-codes"] });
 }
@@ -146,6 +149,7 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
   const [value, setValue] = useState("");
   const [err, setErr] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const suggestions = useMemo(
     () => buildPromoSuggestions((user as any)?.email, (user as any)?.firstName),
@@ -193,6 +197,41 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
     create.mutate(code);
   };
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["/api/affiliate/promo-codes"] });
+    qc.invalidateQueries({ queryKey: ["/api/affiliate/me"] });
+    qc.invalidateQueries({ queryKey: ["/api/affiliate/redemptions"] });
+  };
+
+  const toggle = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const r = await fetch(`/api/affiliate/promo-codes/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ active }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error || "Failed to update code");
+      return r.json();
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const del = useMutation({
+    mutationFn: async ({ id, deleteOrders }: { id: string; deleteOrders: boolean }) => {
+      const r = await fetch(`/api/affiliate/promo-codes/${id}?deleteOrders=${deleteOrders}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error || "Failed to delete code");
+      return data;
+    },
+    onSuccess: () => { invalidateAll(); setConfirmId(null); },
+  });
+
+  const isActive = (c: PromoCodeRow) => c.status === "active";
+
   return (
     <Card data-testid="affexch-promo-code">
       <CardHeader className="pb-3">
@@ -213,24 +252,79 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
         ) : (
           <div className="space-y-2">
             {list.map((c) => (
-              <div key={c.id} className="flex items-center gap-2">
-                <div className="flex-1 font-mono text-lg sm:text-xl font-bold tracking-wider px-3 py-2 rounded-md border bg-muted text-foreground select-all">
-                  {c.code}
-                  {c.status && c.status !== "active" && (
-                    <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground align-middle">
-                      ({c.status})
+              <div key={c.id} className="rounded-md border bg-muted/40">
+                <div className="flex items-center gap-2 p-2">
+                  <div className={`flex-1 font-mono text-lg sm:text-xl font-bold tracking-wider px-3 py-2 rounded-md border bg-muted select-all ${isActive(c) ? "text-foreground" : "text-muted-foreground line-through decoration-1"}`}>
+                    {c.code}
+                    <span className="ml-2 text-[10px] uppercase tracking-wider align-middle no-underline inline-block">
+                      {isActive(c)
+                        ? <span className="text-emerald-500">active</span>
+                        : <span className="text-amber-500">paused</span>}
+                      <span className="text-muted-foreground"> · {c.orderCount} {c.orderCount === 1 ? "order" : "orders"}</span>
                     </span>
-                  )}
+                  </div>
+                  <Button onClick={() => copy(c.code, c.id)} variant="outline" size="sm" className="shrink-0" data-testid={`promo-code-copy-${c.code}`}>
+                    {copiedId === c.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    onClick={() => toggle.mutate({ id: c.id, active: !isActive(c) })}
+                    disabled={toggle.isPending}
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    title={isActive(c) ? "Deactivate (stops working at checkout)" : "Activate"}
+                    data-testid={`promo-code-toggle-${c.code}`}
+                  >
+                    {isActive(c) ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    onClick={() => setConfirmId(confirmId === c.id ? null : c.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 text-destructive hover:text-destructive"
+                    title="Delete code"
+                    data-testid={`promo-code-delete-${c.code}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => copy(c.code, c.id)}
-                  variant="outline"
-                  className="min-h-10 shrink-0"
-                  data-testid={`promo-code-copy-${c.code}`}
-                >
-                  {copiedId === c.id ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                  {copiedId === c.id ? "Copied" : "Copy"}
-                </Button>
+
+                {confirmId === c.id && (
+                  <div className="px-3 pb-3 pt-1 space-y-2 border-t">
+                    {c.orderCount > 0 ? (
+                      <p className="text-xs text-destructive">
+                        <strong>{c.code}</strong> has <strong>{c.orderCount}</strong> attributed{" "}
+                        {c.orderCount === 1 ? "order" : "orders"}. Deleting this code will also{" "}
+                        <strong>permanently delete all {c.orderCount} {c.orderCount === 1 ? "order" : "orders"}</strong> and their
+                        commissions — all sales and commission for this code will be lost. This cannot be undone.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Delete <strong>{c.code}</strong>? It has no attributed orders.
+                      </p>
+                    )}
+                    {del.isError && <p className="text-xs text-destructive">{(del.error as any)?.message}</p>}
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => del.mutate({ id: c.id, deleteOrders: c.orderCount > 0 })}
+                        disabled={del.isPending}
+                        variant="destructive"
+                        size="sm"
+                        data-testid={`promo-code-delete-confirm-${c.code}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {del.isPending
+                          ? "Deleting…"
+                          : c.orderCount > 0
+                            ? `Delete code + ${c.orderCount} ${c.orderCount === 1 ? "order" : "orders"}`
+                            : "Delete code"}
+                      </Button>
+                      <Button onClick={() => setConfirmId(null)} variant="ghost" size="sm" disabled={del.isPending}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

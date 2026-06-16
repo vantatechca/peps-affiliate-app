@@ -3,8 +3,8 @@
 // Uniqueness is enforced by the promo_codes.code UNIQUE constraint; we retry
 // on collision (vanishingly rare with 32^8 = ~1.1T codes).
 import { db } from "./db";
-import { promoCodes } from "../shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { promoCodes, legacyOrders } from "../shared/schema";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { randomInt } from "crypto";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -91,13 +91,82 @@ export async function setCreatorPromoCode(creatorId: string, rawCode: string): P
   }
 }
 
-/** List ALL of a creator's promo codes (the old DiscountCode model allows many). */
+/** List ALL of a creator's promo codes (the old DiscountCode model allows many),
+ *  with the count of orders attributed to each (for display + the delete prompt). */
 export async function listCreatorPromoCodes(creatorId: string) {
   return db
-    .select({ id: promoCodes.id, code: promoCodes.code, status: promoCodes.status, createdAt: promoCodes.createdAt })
+    .select({
+      id: promoCodes.id,
+      code: promoCodes.code,
+      status: promoCodes.status,
+      active: promoCodes.active,
+      createdAt: promoCodes.createdAt,
+      orderCount: sql<number>`count(${legacyOrders.id})::int`,
+    })
     .from(promoCodes)
+    .leftJoin(legacyOrders, eq(legacyOrders.promoCodeId, promoCodes.id))
     .where(eq(promoCodes.creatorId, creatorId))
+    .groupBy(promoCodes.id, promoCodes.code, promoCodes.status, promoCodes.active, promoCodes.createdAt)
     .orderBy(desc(promoCodes.createdAt));
+}
+
+/** Activate/deactivate a creator-owned code. Keeps `status` and the old `active`
+ *  flag in sync so the storefront's checkout validation honours it. */
+export async function setPromoCodeActive(creatorId: string, id: string, active: boolean) {
+  const res = await db
+    .update(promoCodes)
+    .set({ status: active ? "active" : "paused", active })
+    .where(and(eq(promoCodes.id, id), eq(promoCodes.creatorId, creatorId)))
+    .returning({ id: promoCodes.id, code: promoCodes.code, status: promoCodes.status, active: promoCodes.active });
+  if (!res[0]) { const e: any = new Error("Promo code not found"); e.statusCode = 404; throw e; }
+  return res[0];
+}
+
+/** Orders/sales/commission tied to a code — drives the delete confirmation prompt. */
+export async function getPromoCodeDeletionInfo(creatorId: string, id: string) {
+  const [code] = await db
+    .select({ id: promoCodes.id, code: promoCodes.code })
+    .from(promoCodes)
+    .where(and(eq(promoCodes.id, id), eq(promoCodes.creatorId, creatorId)))
+    .limit(1);
+  if (!code) { const e: any = new Error("Promo code not found"); e.statusCode = 404; throw e; }
+  const [agg] = await db
+    .select({
+      orderCount: sql<number>`count(*)::int`,
+      totalSales: sql<string>`coalesce(sum(${legacyOrders.orderTotal}),0)`,
+      totalCommission: sql<string>`coalesce(sum(${legacyOrders.commissionEarned}),0)`,
+    })
+    .from(legacyOrders)
+    .where(eq(legacyOrders.promoCodeId, id));
+  return {
+    code: code.code,
+    orderCount: agg?.orderCount ?? 0,
+    totalSales: agg?.totalSales ?? "0",
+    totalCommission: agg?.totalCommission ?? "0",
+  };
+}
+
+/** Delete a creator-owned code. If it has attributed orders and deleteOrders is
+ *  false, refuses (409 with the counts). If deleteOrders is true, cascade-deletes
+ *  its orders + their commission rows first. DESTRUCTIVE + irreversible — those
+ *  Order/OrderCommission rows are shared with the old app and the merchant. */
+export async function deleteCreatorPromoCode(creatorId: string, id: string, deleteOrders: boolean) {
+  const info = await getPromoCodeDeletionInfo(creatorId, id);
+  if (info.orderCount > 0 && !deleteOrders) {
+    const e: any = new Error(`This code has ${info.orderCount} attributed order(s).`);
+    e.statusCode = 409;
+    e.info = info;
+    throw e;
+  }
+  await db.transaction(async (tx) => {
+    if (info.orderCount > 0) {
+      await tx.execute(sql`delete from "OrderCommission" where "orderId" in (select id from "Order" where "discountCodeId" = ${id})`);
+      await tx.delete(legacyOrders).where(eq(legacyOrders.promoCodeId, id));
+    }
+    await tx.execute(sql`delete from "CommissionSplit" where "discountCodeId" = ${id}`);
+    await tx.delete(promoCodes).where(and(eq(promoCodes.id, id), eq(promoCodes.creatorId, creatorId)));
+  });
+  return info;
 }
 
 /** Create an ADDITIONAL promo code for the creator (does not replace existing). */

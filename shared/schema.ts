@@ -623,6 +623,9 @@ export const promoCodes = pgTable("DiscountCode", {
   creatorId: varchar("affiliateId").notNull().references(() => users.id, { onDelete: 'cascade' }),
   code: varchar("code").notNull().unique(),
   status: varchar("status").notNull().default('active'),
+  // old DiscountCode.active boolean — the old app's checkout validation reads it,
+  // so deactivating in the new app keeps it in sync.
+  active: boolean("active"),
   legacyDiscountPercent: decimal("discountPercent", { precision: 5, scale: 4 }),
   legacyCommissionRate: decimal("commissionRateOverride", { precision: 5, scale: 4 }),
   legacyExpiresAt: timestamp("expiresAt"),
