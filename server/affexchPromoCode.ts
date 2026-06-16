@@ -146,23 +146,18 @@ export async function getPromoCodeDeletionInfo(creatorId: string, id: string) {
   };
 }
 
-/** Delete a creator-owned code. If it has attributed orders and deleteOrders is
- *  false, refuses (409 with the counts). If deleteOrders is true, cascade-deletes
- *  its orders + their commission rows first. DESTRUCTIVE + irreversible — those
- *  Order/OrderCommission rows are shared with the old app and the merchant. */
-export async function deleteCreatorPromoCode(creatorId: string, id: string, deleteOrders: boolean) {
+/** Delete a creator-owned code — ONLY allowed when it has no attributed orders.
+ *  If orders exist, refuses (409 with counts); the creator should deactivate
+ *  instead. We never delete shared Order/OrderCommission records. */
+export async function deleteCreatorPromoCode(creatorId: string, id: string) {
   const info = await getPromoCodeDeletionInfo(creatorId, id);
-  if (info.orderCount > 0 && !deleteOrders) {
-    const e: any = new Error(`This code has ${info.orderCount} attributed order(s).`);
+  if (info.orderCount > 0) {
+    const e: any = new Error(`This code has ${info.orderCount} attributed order(s) and can't be deleted. Deactivate it instead.`);
     e.statusCode = 409;
     e.info = info;
     throw e;
   }
   await db.transaction(async (tx) => {
-    if (info.orderCount > 0) {
-      await tx.execute(sql`delete from "OrderCommission" where "orderId" in (select id from "Order" where "discountCodeId" = ${id})`);
-      await tx.delete(legacyOrders).where(eq(legacyOrders.promoCodeId, id));
-    }
     await tx.execute(sql`delete from "CommissionSplit" where "discountCodeId" = ${id}`);
     await tx.delete(promoCodes).where(and(eq(promoCodes.id, id), eq(promoCodes.creatorId, creatorId)));
   });

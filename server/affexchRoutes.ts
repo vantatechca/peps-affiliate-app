@@ -344,21 +344,19 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // DELETE /api/affiliate/promo-codes/:id — delete a code. ?deleteOrders=true also
-  // removes its attributed orders + commissions (DESTRUCTIVE, shared with old app).
+  // DELETE /api/affiliate/promo-codes/:id — delete a code. Blocked (409) if it has
+  // attributed orders; the creator should deactivate it instead.
   app.delete("/api/affiliate/promo-codes/:id", isAuthenticated, async (req: Request, res) => {
     try {
       const user = req.user as any;
       if (!user || user.role !== "creator") {
         return res.status(403).json({ error: "Affiliate role required" });
       }
-      const deleteOrders = req.query.deleteOrders === "true" || req.body?.deleteOrders === true;
-      const info = await deleteCreatorPromoCode(user.id, req.params.id, deleteOrders);
+      const info = await deleteCreatorPromoCode(user.id, req.params.id);
       res.json({ deleted: true, ...info });
     } catch (err: any) {
       const status = err?.statusCode ?? 500;
       if (status === 500) console.error("[AFFEXCH] promo-codes DELETE error:", err);
-      // 409 carries the order counts so the UI can show the warning + confirm.
       res.status(status).json({ error: err?.message || "Failed to delete promo code", info: err?.info });
     }
   });

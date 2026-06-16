@@ -218,8 +218,8 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
   });
 
   const del = useMutation({
-    mutationFn: async ({ id, deleteOrders }: { id: string; deleteOrders: boolean }) => {
-      const r = await fetch(`/api/affiliate/promo-codes/${id}?deleteOrders=${deleteOrders}`, {
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/affiliate/promo-codes/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -292,37 +292,51 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
                 {confirmId === c.id && (
                   <div className="px-3 pb-3 pt-1 space-y-2 border-t">
                     {c.orderCount > 0 ? (
-                      <p className="text-xs text-destructive">
-                        <strong>{c.code}</strong> has <strong>{c.orderCount}</strong> attributed{" "}
-                        {c.orderCount === 1 ? "order" : "orders"}. Deleting this code will also{" "}
-                        <strong>permanently delete all {c.orderCount} {c.orderCount === 1 ? "order" : "orders"}</strong> and their
-                        commissions — all sales and commission for this code will be lost. This cannot be undone.
-                      </p>
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          <strong>{c.code}</strong> has <strong>{c.orderCount}</strong> attributed{" "}
+                          {c.orderCount === 1 ? "order" : "orders"}, so it can't be deleted (that would erase real sales
+                          and commission shared with the merchant). <strong>Deactivate</strong> it instead — it stops
+                          working at checkout but keeps its history.
+                        </p>
+                        <div className="flex gap-2">
+                          {isActive(c) && (
+                            <Button
+                              onClick={() => { toggle.mutate({ id: c.id, active: false }); setConfirmId(null); }}
+                              disabled={toggle.isPending}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <PauseCircle className="h-4 w-4 mr-1" /> Deactivate
+                            </Button>
+                          )}
+                          <Button onClick={() => setConfirmId(null)} variant="ghost" size="sm">
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Delete <strong>{c.code}</strong>? It has no attributed orders.
-                      </p>
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          Delete <strong>{c.code}</strong>? It has no attributed orders.
+                        </p>
+                        {del.isError && <p className="text-xs text-destructive">{(del.error as any)?.message}</p>}
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => del.mutate(c.id)}
+                            disabled={del.isPending}
+                            variant="destructive"
+                            size="sm"
+                            data-testid={`promo-code-delete-confirm-${c.code}`}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" /> {del.isPending ? "Deleting…" : "Delete code"}
+                          </Button>
+                          <Button onClick={() => setConfirmId(null)} variant="ghost" size="sm" disabled={del.isPending}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
                     )}
-                    {del.isError && <p className="text-xs text-destructive">{(del.error as any)?.message}</p>}
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => del.mutate({ id: c.id, deleteOrders: c.orderCount > 0 })}
-                        disabled={del.isPending}
-                        variant="destructive"
-                        size="sm"
-                        data-testid={`promo-code-delete-confirm-${c.code}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        {del.isPending
-                          ? "Deleting…"
-                          : c.orderCount > 0
-                            ? `Delete code + ${c.orderCount} ${c.orderCount === 1 ? "order" : "orders"}`
-                            : "Delete code"}
-                      </Button>
-                      <Button onClick={() => setConfirmId(null)} variant="ghost" size="sm" disabled={del.isPending}>
-                        Cancel
-                      </Button>
-                    </div>
                   </div>
                 )}
               </div>
