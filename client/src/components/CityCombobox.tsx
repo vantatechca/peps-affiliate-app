@@ -1,21 +1,26 @@
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from "./ui/command";
-import { MapPin, ChevronsUpDown, Check } from "lucide-react";
+import { MapPin, ChevronsUpDown, Check, Navigation } from "lucide-react";
 
 // Searchable city picker (type-ahead) — handles hundreds of cities cleanly.
+// Optionally shows a "current location" item at the top (IP-based).
 export function CityCombobox({
   cities,
   value,
   onChange,
   placeholder = "Choose your city…",
   className = "",
+  currentLocationLabel,
+  onCurrentLocation,
 }: {
   cities: string[];
   value: string | null;
   onChange: (city: string) => void;
   placeholder?: string;
   className?: string;
+  currentLocationLabel?: string;
+  onCurrentLocation?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -40,6 +45,16 @@ export function CityCombobox({
           <CommandInput placeholder="Search city…" className="text-sm" />
           <CommandList>
             <CommandEmpty>No city found.</CommandEmpty>
+            {currentLocationLabel && onCurrentLocation && (
+              <CommandItem
+                value="__current_location__"
+                onSelect={() => { onCurrentLocation(); setOpen(false); }}
+                className="text-primary"
+              >
+                <Navigation className="mr-2 h-4 w-4" />
+                {currentLocationLabel}
+              </CommandItem>
+            )}
             {cities.map((c) => (
               <CommandItem
                 key={c}
