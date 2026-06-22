@@ -72,7 +72,7 @@ export type RankedMerchant = {
 };
 
 // Full merchant list with level + lifetime stats + movement vs the prior window.
-export async function getRankedMerchants(opts: { metric?: "orders" | "revenue"; windowDays?: number } = {}): Promise<RankedMerchant[]> {
+export async function getRankedMerchants(opts: { metric?: "orders" | "revenue"; windowDays?: number; windowTotals?: boolean } = {}): Promise<RankedMerchant[]> {
   const metric = opts.metric ?? "orders";
   const w = opts.windowDays ?? 30;
 
@@ -99,8 +99,14 @@ export async function getRankedMerchants(opts: { metric?: "orders" | "revenue"; 
     })
     .from(vendorProfiles);
 
+  // When windowTotals is set, the orders/revenue/commission shown reflect the
+  // chosen window (e.g. last 7/30/90 days) instead of lifetime. Level (tier
+  // badge) always stays lifetime so a quiet week doesn't demote a merchant.
+  const totalsSource = opts.windowTotals ? last : lifetime;
+
   const list: RankedMerchant[] = merchants.map((m) => {
-    const a = (m.domain && lifetime.get(m.domain)) || ZERO;
+    const a = (m.domain && totalsSource.get(m.domain)) || ZERO;
+    const life = (m.domain && lifetime.get(m.domain)) || ZERO;
     const cur = m.domain ? lastRank.get(m.domain) ?? null : null;
     const pri = m.domain ? priorRank.get(m.domain) ?? null : null;
     const movement = cur != null && pri != null ? pri - cur : null;
@@ -114,7 +120,7 @@ export async function getRankedMerchants(opts: { metric?: "orders" | "revenue"; 
       logoUrl: m.logoUrl,
       status: m.status,
       createdAt: m.createdAt,
-      level: levelForOrders(a.orders),
+      level: levelForOrders(life.orders),
       orders: a.orders,
       revenue: a.revenue,
       commission: a.commission,
