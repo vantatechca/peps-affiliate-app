@@ -114,7 +114,19 @@ export default function CreatorGuidesPage() {
           />
           <Faq
             q="How do I get paid?"
-            a="Commissions accrue against your account. Payout method is being finalised — we'll notify you in-app once it's wired."
+            a="Your commission accrues against your account. Once you've earned at least $50, set up a payment method (PayPal, Interac e-Transfer, crypto, or bank wire) on the Payouts page and request a payout. An admin reviews it and sends the money via the method you saved."
+          />
+          <Faq
+            q="What should I promote?"
+            a="Check the 'Hot selling peptides' list on your dashboard — it's curated by our team and refreshed daily. Feature those products in your content with your code and the merchant's website link."
+          />
+          <Faq
+            q="How do I get support?"
+            a="Tap the SUPPORT button in the bottom-right corner of any page to open your private support chat. Our team reads every message and replies right there."
+          />
+          <Faq
+            q="How many promo codes can I create?"
+            a="Up to 3. Need more than that? Message the support team in chat and we'll set up additional codes for you."
           />
         </CardContent>
       </Card>
