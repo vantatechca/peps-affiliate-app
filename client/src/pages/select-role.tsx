@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { useToast } from "../hooks/use-toast";
-import { Zap, User, Building2 } from "lucide-react";
+import { Zap, User } from "lucide-react";
 import { GenericErrorDialog } from "../components/GenericErrorDialog";
 
 export default function SelectRole() {
-  const [selectedRole, setSelectedRole] = useState<"creator" | "company">("creator");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [errorDialog, setErrorDialog] = useState<{ open: boolean; title: string; description: string }>({
@@ -22,7 +20,7 @@ export default function SelectRole() {
       const response = await fetch("/api/auth/google/complete-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: selectedRole }),
+        body: JSON.stringify({ role: "creator" }),
         credentials: "include",
       });
 
@@ -31,22 +29,15 @@ export default function SelectRole() {
         throw new Error(error.error || "Failed to complete registration");
       }
 
-      const result = await response.json();
+      await response.json();
 
       toast({
         title: "Welcome!",
-        description: "Your account has been created successfully.",
+        description: "Your affiliate account has been created successfully.",
       });
 
-      // Redirect based on role
       setTimeout(() => {
-        if (result.role === "creator") {
-          window.location.href = "/browse";
-        } else if (result.role === "company") {
-          window.location.href = "/company/dashboard";
-        } else {
-          window.location.href = "/";
-        }
+        window.location.href = "/creator/dashboard";
       }, 1000);
     } catch (error: any) {
       setErrorDialog({
@@ -71,59 +62,21 @@ export default function SelectRole() {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>Choose Your Account Type</CardTitle>
+            <CardTitle>You're almost in</CardTitle>
             <CardDescription>
-              Select how you'll be using AffiliateXchange
+              We'll set up your affiliate account so you can start earning.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <RadioGroup
-              value={selectedRole}
-              onValueChange={(value) => setSelectedRole(value as "creator" | "company")}
-              className="grid gap-4"
-            >
-              <div>
-                <RadioGroupItem
-                  value="creator"
-                  id="creator"
-                  className="peer sr-only"
-                />
-                <label
-                  htmlFor="creator"
-                  className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-card p-6 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
-                  data-testid="role-creator"
-                >
-                  <User className="h-12 w-12 mb-3" />
-                  <div className="text-center">
-                    <div className="font-semibold text-lg">Creator</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Browse offers and earn through affiliate marketing
-                    </div>
-                  </div>
-                </label>
+            <div className="flex flex-col items-center justify-between rounded-lg border-2 border-primary bg-primary/5 p-6">
+              <User className="h-12 w-12 mb-3 text-primary" />
+              <div className="text-center">
+                <div className="font-semibold text-lg">Affiliate (Creator)</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Share your promo code, promote peptides, and earn commission.
+                </div>
               </div>
-
-              <div>
-                <RadioGroupItem
-                  value="company"
-                  id="company"
-                  className="peer sr-only"
-                />
-                <label
-                  htmlFor="company"
-                  className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-card p-6 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
-                  data-testid="role-company"
-                >
-                  <Building2 className="h-12 w-12 mb-3" />
-                  <div className="text-center">
-                    <div className="font-semibold text-lg">Company</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Post affiliate offers and work with creators
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </RadioGroup>
+            </div>
 
             <Button
               onClick={handleSubmit}

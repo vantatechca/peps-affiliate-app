@@ -11,8 +11,9 @@ export async function setupGoogleAuth(app: Express) {
   const appName = process.env.APP_NAME || "AffiliateXchange";
   const googlePrompt = process.env.GOOGLE_OAUTH_PROMPT;
 
-  // Build absolute callback URL
-  const port = process.env.PORT || 3000;
+  // Build absolute callback URL. Default port matches server/index.ts (5000)
+  // so the callback doesn't point at a dead localhost:3000 when PORT is unset.
+  const port = process.env.PORT || 5000;
   const baseURL = process.env.BASE_URL || `http://localhost:${port}`;
   const callbackURL = process.env.GOOGLE_CALLBACK_URL
     ? (process.env.GOOGLE_CALLBACK_URL.startsWith('http')
@@ -164,9 +165,7 @@ export async function setupGoogleAuth(app: Express) {
 
       // Existing user without 2FA - redirect based on role
       if (user.role === "creator") {
-        res.redirect("/browse");
-      } else if (user.role === "company") {
-        res.redirect("/company/dashboard");
+        res.redirect("/creator/dashboard");
       } else if (user.role === "admin") {
         res.redirect("/admin");
       } else {
