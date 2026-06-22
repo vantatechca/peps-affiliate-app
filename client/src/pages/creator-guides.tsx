@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GuidesSection } from "../components/AffexchDashboardSections";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
@@ -15,6 +15,8 @@ import {
   Search,
   Link2,
   Tag,
+  Copy,
+  Check,
 } from "lucide-react";
 
 export default function CreatorGuidesPage() {
@@ -63,7 +65,7 @@ export default function CreatorGuidesPage() {
               n={3}
               icon={Link2}
               title="Copy the product URL"
-              body="Copy the link straight from your browser's address bar (e.g. https://merchant.com/products/bpc-157) — or use the product's 'Share / Copy link' button."
+              body="Copy the link straight from your browser's address bar (e.g. https://merchant.com/products/bpc-157)."
             />
             <Step
               n={4}
@@ -83,13 +85,12 @@ export default function CreatorGuidesPage() {
             </p>
           </div>
 
-          {/* Copyable example */}
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Example caption</p>
-            <pre className="whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-[11px] sm:text-xs text-foreground">
-{`Grab BPC-157 here 👉 https://merchant.com/products/bpc-157
-Use code JEROME50 in the discount code box at checkout for 10% off ✅`}
-            </pre>
+          {/* Copyable examples */}
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Example captions</p>
+            {EXAMPLE_CAPTIONS.map((c, i) => (
+              <CaptionExample key={i} text={c} />
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -207,6 +208,43 @@ Use code JEROME50 in the discount code box at checkout for 10% off ✅`}
           />
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Ready-to-use caption examples (swap in the creator's own code + product URL).
+const EXAMPLE_CAPTIONS = [
+  `Grab BPC-157 here 👉 https://merchant.com/products/bpc-157
+Use code PEPSCODE10 in the discount code box at checkout for 10% off ✅`,
+  `💉 My go-to peptide stack is finally back in stock.
+🛒 Shop it: https://merchant.com/products/bpc-157
+💸 Drop PEPSCODE10 in the "Discount code" field at checkout for 10% off.`,
+  `Been getting a ton of questions about where I get my peptides — here you go 🔗 https://merchant.com/products/bpc-157
+Don't forget to enter PEPSCODE10 in the discount code field at checkout to save 10%.`,
+];
+
+function CaptionExample({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard may be unavailable in non-secure contexts */
+    }
+  };
+  return (
+    <div className="relative rounded-md border bg-muted/40">
+      <button
+        type="button"
+        onClick={copy}
+        className="absolute top-2 right-2 inline-flex items-center gap-1 rounded border bg-background/80 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+        aria-label="Copy caption"
+      >
+        {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+      </button>
+      <pre className="whitespace-pre-wrap p-3 pr-16 font-mono text-[11px] sm:text-xs text-foreground">{text}</pre>
     </div>
   );
 }
