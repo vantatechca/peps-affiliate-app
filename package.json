@@ -19,6 +19,7 @@
     "migrate:2fa": "tsx --env-file=.env scripts/run-027-2fa-migration.ts",
     "migrate:wallet-invoice": "tsx --env-file=.env scripts/run-036-wallet-invoice-migration.ts",
     "migrate:affiliate-sales": "tsx --env-file=.env scripts/run-037-affiliate-sales-migration.ts",
+    "migrate:peptides-support": "tsx --env-file=.env scripts/apply-affexch-peptides-support.ts",
     "migrate:deliverable-notifications": "node --import tsx server/migrations/add-deliverable-notification-enums.ts",
     "check:user-auth": "tsx --env-file=.env scripts/check-user-auth.ts",
     "verify:otp": "tsx --env-file=.env scripts/verify-otp-columns.ts",

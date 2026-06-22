@@ -560,7 +560,7 @@ export async function setupAuth(app: Express) {
         bio: why.trim(),
         phone: phone.trim(),
         city: city ? String(city).trim() : null,
-        affiliateTier: "pending",
+        affiliateTier: "starter",
         instagramUrl: socials ? String(socials).trim() : null,
         youtubeUrl: youtube ? String(youtube).trim() : null,
         tiktokUrl: null,

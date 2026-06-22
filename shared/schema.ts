@@ -24,10 +24,13 @@ export const userAccountStatusEnum = pgEnum('user_account_status', ['active', 's
 export const companyStatusEnum = pgEnum('company_status', ['pending', 'approved', 'rejected', 'suspended']);
 export const offerStatusEnum = pgEnum('offer_status', ['draft', 'pending_review', 'approved', 'paused', 'archived']);
 export const commissionTypeEnum = pgEnum('commission_type', ['per_sale', 'per_lead', 'per_click', 'monthly_retainer', 'hybrid', 'promo_code']);
-// AFFEXCH peptide pivot: cross-niche creator tier driven by approved content_links count (0/1/5/10/20 thresholds)
-export const affiliateTierEnum = pgEnum('affiliate_tier', ['pending', 'verified', 'silver', 'gold', 'elite']);
+// AFFEXCH peptide pivot: cross-niche creator tier driven by sales attributed to
+// the affiliate's promo codes — combined order count AND sales revenue gates.
+// (Thresholds live in server/affexchRoutes.ts TIER_THRESHOLDS.)
+export const affiliateTierEnum = pgEnum('affiliate_tier', ['starter', 'verified', 'silver', 'gold', 'elite']);
 export const promoCodeStatusEnum = pgEnum('promo_code_status', ['active', 'paused', 'revoked']);
 export const contentLinkStatusEnum = pgEnum('content_link_status', ['pending', 'approved', 'rejected']);
+export const supportThreadStatusEnum = pgEnum('support_thread_status', ['open', 'closed']);
 export const applicationStatusEnum = pgEnum('application_status', [
   'pending',
   'approved',
@@ -182,7 +185,7 @@ export const creatorProfiles = pgTable("creator_profiles", {
   instagramFollowers: integer("instagram_followers"),
   niches: text("niches").array().default(sql`ARRAY[]::text[]`),
   // AFFEXCH peptide pivot — see docs/AFFEXCH_SESSION_HANDOFF.md Phases 2-3
-  affiliateTier: affiliateTierEnum("affiliate_tier").notNull().default('pending'),
+  affiliateTier: affiliateTierEnum("affiliate_tier").notNull().default('starter'),
   city: varchar("city"),
   phone: varchar("phone"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -644,7 +647,8 @@ export const promoCodesRelations = relations(promoCodes, ({ one, many }) => ({
 }));
 
 // Content links — affiliate-submitted social posts/videos awaiting admin approval
-// Approved count drives affiliate_tier (0/1/5/10/20 thresholds: pending/verified/silver/gold/elite)
+// NOTE: affiliate_tier is now driven by attributed sales (see server TIER_THRESHOLDS),
+// not by approved content links. Ladder: starter/verified/silver/gold/elite.
 export const contentLinks = pgTable("content_links", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -1483,16 +1487,59 @@ export const insertCompanyVerificationDocumentSchema = z.object({});
 
 // ============================================================
 
-// AFFEXCH community chat — anonymous landing-page chat popup messages
-// See client/src/landing-affexch/community/AffiliateCommunityChat.jsx
-export const communityChatMessages = pgTable("community_chat_messages", {
+// AFFEXCH "Top peptide offers to promote" — admin-curated catalogue surfaced
+// (shuffled daily) on the affiliate dashboard. Admins add/remove rows here.
+export const peptides = pgTable("peptides", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  handle: varchar("handle", { length: 32 }).notNull(),
-  text: varchar("text", { length: 280 }).notNull(),
+  productName: varchar("product_name", { length: 120 }).notNull(),
+  merchantUrl: varchar("merchant_url", { length: 500 }).notNull(),
+  // Customer discount the affiliate advertises (e.g. 10 → "10% off").
+  discountPercent: integer("discount_percent").notNull().default(10),
+  // Affiliate commission for promoting it (e.g. 20 → "20% commission").
+  commissionPercent: integer("commission_percent").notNull().default(20),
+  isActive: boolean("is_active").notNull().default(true),
+  displayOrder: integer("display_order"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_peptides_active").on(table.isActive),
+]);
+
+// AFFEXCH support chat — one private thread per affiliate. Admins read every
+// thread and reply. Replaces the old anonymous community chat.
+export const supportThreads = pgTable("support_threads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  creatorId: varchar("creator_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
+  status: supportThreadStatusEnum("status").notNull().default('open'),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+  // Unread counters per side so each inbox can show a badge.
+  creatorUnreadCount: integer("creator_unread_count").notNull().default(0),
+  adminUnreadCount: integer("admin_unread_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const supportMessages = pgTable("support_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  threadId: varchar("thread_id").notNull().references(() => supportThreads.id, { onDelete: 'cascade' }),
+  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  senderRole: varchar("sender_role", { length: 16 }).notNull(), // 'creator' | 'admin'
+  body: varchar("body", { length: 2000 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  index("idx_community_chat_created_at").on(table.createdAt),
+  index("idx_support_messages_thread").on(table.threadId),
 ]);
+
+export const insertPeptideSchema = createInsertSchema(peptides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type Peptide = typeof peptides.$inferSelect;
+export type InsertPeptide = z.infer<typeof insertPeptideSchema>;
+
+export type SupportThread = typeof supportThreads.$inferSelect;
+export type SupportMessage = typeof supportMessages.$inferSelect;
 
 // Type exports for Replit Auth
 export type UpsertUser = typeof users.$inferInsert;

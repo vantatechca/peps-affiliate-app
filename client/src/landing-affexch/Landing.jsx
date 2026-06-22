@@ -14,7 +14,6 @@ import CTA from "./sections/CTA";
 import { CityProvider } from "./city/CityContext";
 import CitySelectModal from "./city/CitySelectModal";
 import ApplicationFormModal from "./city/ApplicationFormModal";
-import CommunityChatPopup from "./community/CommunityChatPopup";
 
 export default function Landing() {
   return (
@@ -42,7 +41,6 @@ export default function Landing() {
 
       <CitySelectModal />
       <ApplicationFormModal />
-      <CommunityChatPopup />
     </CityProvider>
   );
 }

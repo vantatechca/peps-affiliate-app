@@ -80,11 +80,20 @@ const CUSTOM_CODE_RE = /^[A-Z0-9]{3,20}$/;
 // Each section is exported individually so it can render either on the
 // combined dashboard or on its own dedicated /creator/<feature> page.
 
+export type NextTier = {
+  tier: string;
+  minOrders: number;
+  minRevenue: number;
+  ordersRemaining: number;
+  revenueRemaining: number;
+};
+
 export type AffiliateMe = {
   promoCode: string | null;
-  tier: "pending" | "verified" | "silver" | "gold" | "elite";
-  nextTier: { tier: string; min: number; remaining: number } | null;
-  linkCounts: { pending: number; approved: number; rejected: number };
+  tier: "starter" | "verified" | "silver" | "gold" | "elite";
+  nextTier: NextTier | null;
+  // Sales attributed to the creator's promo codes — drives the tier ladder.
+  sales: { orders: number; revenue: number };
   city: string | null;
 };
 
@@ -110,7 +119,7 @@ export type Redemption = {
 };
 
 const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
-  pending: "Pending",
+  starter: "Starter",
   verified: "Verified",
   silver: "Silver",
   gold: "Gold",
@@ -118,7 +127,7 @@ const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
 };
 
 const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
-  pending: "bg-muted text-muted-foreground border-border",
+  starter: "bg-muted text-muted-foreground border-border",
   verified: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
   silver: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700",
   gold: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800",
@@ -478,9 +487,21 @@ export function MilestoneSection({ me: meProp }: { me?: AffiliateMe } = {}) {
   const { data: meFetched } = useAffiliateMe();
   const me = meProp ?? meFetched;
   if (!me) return null;
-  const approved = me.linkCounts.approved;
+  const orders = me.sales?.orders ?? 0;
+  const revenue = me.sales?.revenue ?? 0;
   const next = me.nextTier;
-  const pct = next ? Math.min(100, Math.round(((next.min - next.remaining) / next.min) * 100)) : 100;
+  // Progress toward the next rung = whichever axis (orders / revenue) is least complete.
+  const pct = next
+    ? Math.min(
+        100,
+        Math.round(
+          Math.min(
+            next.minOrders ? orders / next.minOrders : 1,
+            next.minRevenue ? revenue / next.minRevenue : 1,
+          ) * 100,
+        ),
+      )
+    : 100;
 
   return (
     <Card data-testid="affexch-milestone">
@@ -494,8 +515,12 @@ export function MilestoneSection({ me: meProp }: { me?: AffiliateMe } = {}) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Approved links</span>
-          <span className="font-semibold">{approved}</span>
+          <span className="text-muted-foreground">Attributed sales</span>
+          <span className="font-semibold">{orders}</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Sales revenue</span>
+          <span className="font-semibold">${revenue.toFixed(2)}</span>
         </div>
         {next ? (
           <>
@@ -503,12 +528,19 @@ export function MilestoneSection({ me: meProp }: { me?: AffiliateMe } = {}) {
               <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
             </div>
             <p className="text-xs text-muted-foreground">
-              {next.remaining} more approved {next.remaining === 1 ? "link" : "links"} to reach{" "}
+              {next.ordersRemaining > 0 && (
+                <>
+                  {next.ordersRemaining} more {next.ordersRemaining === 1 ? "sale" : "sales"}
+                  {next.revenueRemaining > 0 ? " and " : " "}
+                </>
+              )}
+              {next.revenueRemaining > 0 && <>${next.revenueRemaining.toFixed(2)} more revenue </>}
+              to reach{" "}
               <span className="font-semibold text-foreground">{TIER_LABEL[next.tier as AffiliateMe["tier"]]}</span>.
             </p>
           </>
         ) : (
-          <p className="text-xs text-muted-foreground">You've reached the top tier. Keep posting!</p>
+          <p className="text-xs text-muted-foreground">You've reached the top tier. Keep selling!</p>
         )}
       </CardContent>
     </Card>
