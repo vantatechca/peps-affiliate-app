@@ -192,7 +192,15 @@ export default function CreatorDashboard() {
                       interval="preserveStartEnd"
                     />
                     <Tooltip
-                      contentStyle={{ fontSize: 11, borderRadius: 6 }}
+                      contentStyle={{
+                        fontSize: 11,
+                        borderRadius: 6,
+                        backgroundColor: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        color: "hsl(var(--popover-foreground))",
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
                       formatter={(v: number) => [`$${v.toFixed(2)}`, "Earnings"]}
                     />
                     <Area
