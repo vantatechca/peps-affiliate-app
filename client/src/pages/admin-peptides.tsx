@@ -30,7 +30,7 @@ import { FlaskConical, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 type Peptide = {
   id: string;
   productName: string;
-  merchantUrl: string;
+  merchantUrl: string | null;
   discountPercent: number;
   commissionPercent: number;
   isActive: boolean;
@@ -138,7 +138,7 @@ export default function AdminPeptidesPage() {
     setEditing(p);
     setForm({
       productName: p.productName,
-      merchantUrl: p.merchantUrl,
+      merchantUrl: p.merchantUrl ?? "",
       discountPercent: String(p.discountPercent),
       commissionPercent: String(p.commissionPercent),
       displayOrder: p.displayOrder == null ? "" : String(p.displayOrder),
@@ -151,7 +151,9 @@ export default function AdminPeptidesPage() {
   const submit = () => {
     setErr("");
     if (!form.productName.trim()) return setErr("Product name is required");
-    if (!/^https?:\/\/.+/i.test(form.merchantUrl.trim())) return setErr("A valid merchant URL is required");
+    if (form.merchantUrl.trim() && !/^https?:\/\/.+/i.test(form.merchantUrl.trim())) {
+      return setErr("Merchant URL must start with http:// or https:// (or leave it blank)");
+    }
     save.mutate({
       id: editing?.id,
       body: {
@@ -170,10 +172,10 @@ export default function AdminPeptidesPage() {
       <header className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <FlaskConical className="h-6 w-6 text-primary" /> Peptide Offers
+            <FlaskConical className="h-6 w-6 text-primary" /> Hot Selling Peptides
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            The catalogue shown (shuffled daily) on every affiliate's dashboard.
+            The list shown (shuffled daily) on every affiliate's dashboard. Affiliate cards show the commission only.
           </p>
         </div>
         <Button onClick={openCreate}>
@@ -210,15 +212,19 @@ export default function AdminPeptidesPage() {
                 {peptides.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">
-                      <a
-                        href={p.merchantUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 hover:text-primary"
-                      >
-                        {p.productName}
-                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                      </a>
+                      {p.merchantUrl ? (
+                        <a
+                          href={p.merchantUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 hover:text-primary"
+                        >
+                          {p.productName}
+                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        </a>
+                      ) : (
+                        <span>{p.productName}</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px]">{p.discountPercent}% off</Badge>
@@ -272,7 +278,7 @@ export default function AdminPeptidesPage() {
               />
             </div>
             <div>
-              <Label htmlFor="merchantUrl">Merchant URL</Label>
+              <Label htmlFor="merchantUrl">Merchant URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input
                 id="merchantUrl"
                 value={form.merchantUrl}

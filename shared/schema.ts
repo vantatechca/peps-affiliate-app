@@ -1492,7 +1492,9 @@ export const insertCompanyVerificationDocumentSchema = z.object({});
 export const peptides = pgTable("peptides", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productName: varchar("product_name", { length: 120 }).notNull(),
-  merchantUrl: varchar("merchant_url", { length: 500 }).notNull(),
+  // Optional — affiliates are told to include the merchant link in their posts;
+  // a per-peptide URL just makes the card clickable when present.
+  merchantUrl: varchar("merchant_url", { length: 500 }),
   // Customer discount the affiliate advertises (e.g. 10 → "10% off").
   discountPercent: integer("discount_percent").notNull().default(10),
   // Affiliate commission for promoting it (e.g. 20 → "20% commission").

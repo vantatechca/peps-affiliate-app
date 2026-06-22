@@ -164,12 +164,29 @@ export async function deleteCreatorPromoCode(creatorId: string, id: string) {
   return info;
 }
 
+// Affiliates can self-serve up to this many codes; beyond it they must ask an
+// admin (via support chat). Keep in sync with the client copy in
+// AffexchDashboardSections.tsx (MAX_PROMO_CODES).
+export const MAX_PROMO_CODES = 3;
+
 /** Create an ADDITIONAL promo code for the creator (does not replace existing). */
 export async function createCreatorPromoCode(creatorId: string, rawCode: string): Promise<string> {
   const code = String(rawCode ?? "").trim().toUpperCase();
   if (!CUSTOM_CODE_RE.test(code)) {
     const e: any = new Error("Code must be 3–20 characters, letters and numbers only.");
     e.statusCode = 400;
+    throw e;
+  }
+  // Cap self-serve codes at MAX_PROMO_CODES — more requires admin help.
+  const [{ count: existingCount } = { count: 0 }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(promoCodes)
+    .where(eq(promoCodes.creatorId, creatorId));
+  if (existingCount >= MAX_PROMO_CODES) {
+    const e: any = new Error(
+      `You can create up to ${MAX_PROMO_CODES} promo codes. Need more? Message the support team in chat and we'll set them up for you.`,
+    );
+    e.statusCode = 409;
     throw e;
   }
   try {

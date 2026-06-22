@@ -1732,8 +1732,9 @@ export function registerAffexchRoutes(app: Express) {
     if (!productName || productName.length > 120) {
       return { error: "productName is required (max 120 chars)" };
     }
-    if (!merchantUrl || !URL_REGEX.test(merchantUrl) || merchantUrl.length > 500) {
-      return { error: "A valid merchantUrl (http:// or https://) is required" };
+    // merchantUrl is optional, but if provided it must be a valid http(s) URL.
+    if (merchantUrl && (!URL_REGEX.test(merchantUrl) || merchantUrl.length > 500)) {
+      return { error: "merchantUrl must be a valid http:// or https:// URL" };
     }
     const toPct = (v: any, dflt: number) => {
       if (v === undefined || v === null || v === "") return dflt;
@@ -1743,7 +1744,7 @@ export function registerAffexchRoutes(app: Express) {
     return {
       value: {
         productName,
-        merchantUrl,
+        merchantUrl: merchantUrl || null,
         discountPercent: toPct(body?.discountPercent, 10),
         commissionPercent: toPct(body?.commissionPercent, 20),
         isActive: body?.isActive === undefined ? true : !!body.isActive,

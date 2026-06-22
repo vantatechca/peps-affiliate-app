@@ -4,6 +4,7 @@ import {
   Sparkles,
   Send,
   TrendingUp,
+  DollarSign,
   Instagram,
   Music2,
   Youtube,
@@ -41,13 +42,19 @@ export default function CreatorGuidesPage() {
               n={2}
               icon={Send}
               title="Post your content"
-              body="Post a video / story / image that includes your code so your audience can redeem it at checkout."
+              body="Post a video / story / image that includes your code AND the merchant's website link, so your audience knows exactly where to buy and apply it at checkout."
             />
             <Step
               n={3}
+              icon={DollarSign}
+              title="How your code pays"
+              body="Your code gives customers 10% off their order — and earns you 20% commission on every sale they make with it."
+            />
+            <Step
+              n={4}
               icon={TrendingUp}
               title="Climb tiers"
-              body="Each approved link bumps your tier (1 = Verified, 5 = Silver, 10 = Gold, 20 = Elite)."
+              body="Your tier climbs with the number of sales your code drives: new accounts start at Verified, then 1–9 sales = Starter, 10–29 = Silver, 30–59 = Gold, 60+ = Elite."
             />
           </ol>
         </CardContent>

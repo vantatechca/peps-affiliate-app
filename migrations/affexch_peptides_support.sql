@@ -26,11 +26,12 @@ BEGIN
   END IF;
 END$$;
 
--- Top peptide offers to promote (admin-curated, shuffled daily on the dashboard)
+-- "Hot selling peptides" list (admin-curated, shuffled daily on the dashboard).
+-- merchant_url is optional — affiliate cards show the commission only.
 CREATE TABLE IF NOT EXISTS peptides (
   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
   product_name varchar(120) NOT NULL,
-  merchant_url varchar(500) NOT NULL,
+  merchant_url varchar(500),
   discount_percent integer NOT NULL DEFAULT 10,
   commission_percent integer NOT NULL DEFAULT 20,
   is_active boolean NOT NULL DEFAULT true,
@@ -39,6 +40,23 @@ CREATE TABLE IF NOT EXISTS peptides (
   updated_at timestamp DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_peptides_active ON peptides(is_active);
+-- For DBs created before merchant_url became optional:
+ALTER TABLE peptides ALTER COLUMN merchant_url DROP NOT NULL;
+
+-- Seed the initial list (only if the table is empty, so re-runs don't duplicate).
+INSERT INTO peptides (product_name, discount_percent, commission_percent, display_order)
+SELECT v.product_name, 10, 20, v.ord
+FROM (VALUES
+  ('Retatrutide', 1),
+  ('GLOW Blend - BPC-157 + GHK-Cu + TB-500', 2),
+  ('Tesamorelin', 3),
+  ('NAD+', 4),
+  ('CJC-1295 No DAC + Ipamorelin', 5),
+  ('BPC-157 + TB-500', 6),
+  ('MOTS-c', 7),
+  ('GHK-Cu', 8)
+) AS v(product_name, ord)
+WHERE NOT EXISTS (SELECT 1 FROM peptides);
 
 -- Support chat — one thread per affiliate
 CREATE TABLE IF NOT EXISTS support_threads (
