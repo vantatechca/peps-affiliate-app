@@ -1301,8 +1301,7 @@ export default function Settings() {
     const sections: SettingsSection[] = [
       { id: "account-info", label: "Account Information", icon: <User className="h-4 w-4" /> },
       { id: "change-email", label: "Change Email", icon: <Mail className="h-4 w-4" /> },
-      { id: "change-password-otp", label: "Password (Email Verify)", icon: <Key className="h-4 w-4" /> },
-      { id: "change-password-legacy", label: "Password (Legacy)", icon: <KeyRound className="h-4 w-4" /> },
+      { id: "change-password-legacy", label: "Change Password", icon: <KeyRound className="h-4 w-4" /> },
     ];
     return sections;
   }, []);
@@ -2095,133 +2094,14 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      <Card id="change-password-otp" className="border-card-border scroll-mt-24">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Change Password with Email Verification
-          </CardTitle>
-          <CardDescription>
-            Change your password securely with email verification code
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {user?.googleId ? (
-            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-              <Shield className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-900 dark:text-blue-100">Google Account</AlertTitle>
-              <AlertDescription className="text-blue-800 dark:text-blue-200">
-                You signed in with Google. Your password is managed by Google, so you don't need to change it here.
-              </AlertDescription>
-            </Alert>
-          ) : !passwordChangeOtpSent ? (
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md border border-blue-200 dark:border-blue-800">
-                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                  Secure Password Change
-                </p>
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  We'll send a verification code to your email to ensure it's really you making this change.
-                </p>
-              </div>
-
-              <Button
-                onClick={handleRequestPasswordChangeOtp}
-                disabled={isRequestingPasswordChangeOtp}
-                className="w-full"
-              >
-                {isRequestingPasswordChangeOtp ? "Sending Code..." : "Send Verification Code to Email"}
-              </Button>
-            </div>
-          ) : (
-              <div className="space-y-4">
-                <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                  <AlertTitle className="text-blue-900 dark:text-blue-100">Verification Code Sent</AlertTitle>
-                  <AlertDescription className="text-blue-800 dark:text-blue-200">
-                    We've sent a 6-digit code to {passwordChangeMaskedEmail}. Please check your email and enter the code below.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password-change-otp">Verification Code *</Label>
-                  <Input
-                    id="password-change-otp"
-                    type="text"
-                    placeholder="000000"
-                    maxLength={6}
-                    value={passwordChangeOtpCode}
-                    onChange={(e) => setPasswordChangeOtpCode(e.target.value.replace(/\D/g, ''))}
-                    className="font-mono text-lg tracking-widest text-center"
-                  />
-                  <p className="text-xs text-muted-foreground">Code expires in 15 minutes</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="newPasswordWithOtp">New Password *</Label>
-                  <Input
-                    id="newPasswordWithOtp"
-                    type="password"
-                    placeholder="Enter new password (min 8 characters)"
-                    value={newPasswordWithOtp}
-                    onChange={(e) => setNewPasswordWithOtp(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPasswordWithOtp">Confirm New Password *</Label>
-                  <Input
-                    id="confirmPasswordWithOtp"
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPasswordWithOtp}
-                    onChange={(e) => setConfirmPasswordWithOtp(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleChangePasswordWithOtp}
-                    disabled={isChangingPasswordWithOtp}
-                    className="flex-1"
-                  >
-                    {isChangingPasswordWithOtp ? "Changing Password..." : "Change Password"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setPasswordChangeOtpSent(false);
-                      setPasswordChangeOtpCode("");
-                      setPasswordChangeMaskedEmail("");
-                      setNewPasswordWithOtp("");
-                      setConfirmPasswordWithOtp("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-
-                <Button
-                  variant="link"
-                  onClick={handleRequestPasswordChangeOtp}
-                  disabled={isRequestingPasswordChangeOtp}
-                  className="w-full text-sm"
-                >
-                  {isRequestingPasswordChangeOtp ? "Sending..." : "Didn't receive the code? Send again"}
-                </Button>
-              </div>
-            )}
-        </CardContent>
-      </Card>
-
       <Card id="change-password-legacy" className="border-card-border scroll-mt-24">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <KeyRound className="h-5 w-5" />
-            Change Password (Legacy)
+            Change Password
           </CardTitle>
           <CardDescription>
-            Quick password change without email verification (less secure)
+            Update your account password
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
