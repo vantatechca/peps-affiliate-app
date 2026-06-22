@@ -67,10 +67,11 @@ type Summary = {
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState(30);
+  const [topRange, setTopRange] = useState(30);
   const { data: summary, isLoading } = useQuery<Summary>({
-    queryKey: ["/api/admin/affexch-summary", range],
+    queryKey: ["/api/admin/affexch-summary", range, topRange],
     queryFn: async () => {
-      const r = await fetch(`/api/admin/affexch-summary?days=${range}`, { credentials: "include" });
+      const r = await fetch(`/api/admin/affexch-summary?days=${range}&topDays=${topRange}`, { credentials: "include" });
       if (!r.ok) throw new Error("Failed to load analytics");
       return r.json();
     },
@@ -216,6 +217,23 @@ export default function AdminAnalytics() {
       </Card>
 
       {/* Top creators + top merchants side by side */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          Top performers · last {topRange} days
+        </p>
+        <div className="flex gap-1">
+          {[7, 30, 90].map((d) => (
+            <button
+              key={d}
+              onClick={() => setTopRange(d)}
+              className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors ${topRange === d ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+              data-testid={`analytics-toprange-${d}`}
+            >
+              {d}d
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <Card className="fx-card">
           <CardHeader className="pb-3">
@@ -226,7 +244,7 @@ export default function AdminAnalytics() {
           <CardContent>
             {!summary?.topCreators || summary.topCreators.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">
-                No earning creators yet.
+                No creators earned in the last {topRange} days.
               </p>
             ) : (
               <ul className="space-y-2">
@@ -268,7 +286,7 @@ export default function AdminAnalytics() {
           <CardContent>
             {!summary?.topMerchants || summary.topMerchants.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">
-                No merchant sales yet.
+                No merchant sales in the last {topRange} days.
               </p>
             ) : (
               <ul className="space-y-2">

@@ -1138,7 +1138,11 @@ export function registerAffexchRoutes(app: Express) {
         });
       }
 
-      // ---- Top creators (by commission) ---- from the OrderCommission ledger
+      // ---- Top creators + merchants window (?topDays, default 30: 7/30/90) ----
+      const topDays = Math.min(Math.max(parseInt(String(req.query.topDays ?? "30"), 10) || 30, 7), 365);
+
+      // ---- Top creators (by commission in the window) ---- from the
+      // OrderCommission ledger, joined to Order for the date filter + gross.
       const topCreatorRows = await db
         .select({
           creatorId: legacyOrderCommissions.recipientUserId,
@@ -1146,10 +1150,13 @@ export function registerAffexchRoutes(app: Express) {
           lastName: users.lastName,
           email: users.email,
           totalCommission: sum(legacyOrderCommissions.amount),
+          totalSales: sum(legacyOrders.orderTotal),
           saleCount: sql<number>`count(*)::int`,
         })
         .from(legacyOrderCommissions)
         .innerJoin(users, eq(legacyOrderCommissions.recipientUserId, users.id))
+        .innerJoin(legacyOrders, eq(legacyOrderCommissions.orderId, legacyOrders.id))
+        .where(sql`${legacyOrders.createdAt} >= now() - make_interval(days => ${topDays})`)
         .groupBy(legacyOrderCommissions.recipientUserId, users.firstName, users.lastName, users.email)
         .orderBy(desc(sum(legacyOrderCommissions.amount)))
         .limit(5);
@@ -1177,8 +1184,8 @@ export function registerAffexchRoutes(app: Express) {
         aov: { value: aov30, deltaPct: pct(aov30, aovPrev) },
       };
 
-      // Top merchants enriched with level + 30d movement.
-      const rankedTopMerchants = (await getRankedMerchants({ metric: "revenue" }))
+      // Top merchants enriched with level + movement, totals scoped to the window.
+      const rankedTopMerchants = (await getRankedMerchants({ metric: "revenue", windowDays: topDays, windowTotals: true }))
         .filter((m) => m.orders > 0)
         .slice(0, 5)
         .map((m) => ({
@@ -1219,7 +1226,7 @@ export function registerAffexchRoutes(app: Express) {
           name: [r.firstName, r.lastName].filter(Boolean).join(" ") || r.email || r.creatorId,
           email: r.email,
           totalCommission: parseFloat(r.totalCommission ?? "0"),
-          totalSales: 0,
+          totalSales: parseFloat(r.totalSales ?? "0"),
           saleCount: r.saleCount,
         })),
         topMerchants: rankedTopMerchants,
