@@ -73,7 +73,7 @@ export default function CreatorGuidesPage() {
               bullets={[
                 "Put the code in your bio link or pinned comment.",
                 "Reels outperform feed posts ~3:1 for redemptions.",
-                "Tag the merchant's IG handle for higher reach.",
+                "Add the merchant's website link (bio or sticker) so customers can go buy directly.",
               ]}
             />
             <PlatformTip
@@ -83,6 +83,7 @@ export default function CreatorGuidesPage() {
                 "Pinned comments convert best. Don't bury the code.",
                 "Talk about a specific peptide, not just \"peptides.\"",
                 "Add the code on-screen too — captions get truncated.",
+                "Drop the merchant's website in your bio so viewers can buy directly.",
               ]}
             />
             <PlatformTip
@@ -92,6 +93,7 @@ export default function CreatorGuidesPage() {
                 "Top of description + verbal mention.",
                 "Long-form (10+ min) drives way more redemptions.",
                 "Add timestamp chapter \"Discount Code\" so viewers can jump.",
+                "Put the merchant's website link in the description so customers know where to buy.",
               ]}
             />
           </div>
