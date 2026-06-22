@@ -2,7 +2,9 @@ import { useMemo } from "react";
 import {
   SalesTrackerSection,
   useAffiliateRedemptions,
+  useAffiliatePromoCodes,
   type Redemption,
+  type PromoCodeRow,
 } from "../components/AffexchDashboardSections";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { TrendingUp, Store, DollarSign, Receipt, Sparkles } from "lucide-react";
@@ -10,6 +12,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 
 export default function CreatorSalesPage() {
   const { data: redemptions } = useAffiliateRedemptions();
+  const { data: promoCodes } = useAffiliatePromoCodes();
   const rows = redemptions ?? [];
 
   const totalSales = rows.reduce((s, r) => s + parseFloat(r.saleAmount ?? "0"), 0);
@@ -19,7 +22,7 @@ export default function CreatorSalesPage() {
   const series = useMemo(() => buildSeries(rows, 30), [rows]);
   const hasData = series.some((d) => d.commission > 0);
 
-  const codeBreakdown = useMemo(() => buildCodeBreakdown(rows), [rows]);
+  const codeBreakdown = useMemo(() => buildCodeBreakdown(rows, promoCodes ?? []), [rows, promoCodes]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 fx-page">
@@ -71,7 +74,15 @@ export default function CreatorSalesPage() {
                     tickFormatter={(v) => `$${v}`}
                   />
                   <Tooltip
-                    contentStyle={{ fontSize: 11, borderRadius: 6 }}
+                    contentStyle={{
+                      fontSize: 11,
+                      borderRadius: 6,
+                      backgroundColor: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      color: "hsl(var(--popover-foreground))",
+                    }}
+                    labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
                     formatter={(v: number) => [`$${v.toFixed(2)}`, "Commission"]}
                   />
                   <Area
@@ -105,7 +116,7 @@ export default function CreatorSalesPage() {
         <CardContent>
           {codeBreakdown.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
-              Your code performance will appear here once sales are reported.
+              Create a promo code to start tracking its performance.
             </p>
           ) : (
             <ul className="space-y-1.5">
@@ -184,8 +195,12 @@ function buildSeries(rows: Redemption[], days: number) {
   return out;
 }
 
-function buildCodeBreakdown(rows: Redemption[]) {
+function buildCodeBreakdown(rows: Redemption[], codes: PromoCodeRow[]) {
   const map = new Map<string, { code: string; count: number; gross: number; commission: number }>();
+  // Seed every one of the creator's codes so codes with no sales still show.
+  for (const c of codes) {
+    map.set(c.code, { code: c.code, count: 0, gross: 0, commission: 0 });
+  }
   for (const r of rows) {
     const code = r.promoCode || "—";
     const cur = map.get(code) ?? { code, count: 0, gross: 0, commission: 0 };
@@ -194,5 +209,8 @@ function buildCodeBreakdown(rows: Redemption[]) {
     cur.commission += parseFloat(r.commissionAmount ?? "0");
     map.set(code, cur);
   }
-  return Array.from(map.values()).sort((a, b) => b.commission - a.commission || b.gross - a.gross);
+  // Codes with sales first (by commission, then gross), zero-sale codes after.
+  return Array.from(map.values()).sort(
+    (a, b) => b.commission - a.commission || b.gross - a.gross || a.code.localeCompare(b.code),
+  );
 }
