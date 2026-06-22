@@ -32,10 +32,10 @@ export function CreatorCommunityChatFab() {
     let alive = true;
     const poll = async () => {
       try {
-        const r = await fetch("/api/affiliate/support", { credentials: "include" });
+        const r = await fetch("/api/affiliate/support/unread", { credentials: "include" });
         if (!r.ok) return;
         const data = await r.json();
-        if (alive) setUnread(data?.thread?.creatorUnreadCount ?? 0);
+        if (alive) setUnread(data?.unread ?? 0);
       } catch {
         /* ignore */
       }

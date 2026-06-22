@@ -2,9 +2,10 @@
 -- Also drops the old anonymous community chat (replaced by support chat).
 -- Idempotent — safe to run more than once.
 
--- Rename the base affiliate tier 'pending' -> 'starter' (sales-based ladder).
--- ALTER TYPE ... RENAME VALUE relabels the value in place, so existing rows
--- follow automatically. Reset the column default to the new label afterward.
+-- Affiliate tier is now order-count based: verified 0 (on signup) · starter 1-9
+-- · silver 10-29 · gold 30-59 · elite 60+. Rename the legacy 'pending' value to
+-- 'starter' (now the 1-9 rung) so the label exists, then default new accounts to
+-- 'verified'. ALTER TYPE ... RENAME VALUE relabels in place so existing rows follow.
 DO $$
 BEGIN
   IF EXISTS (
@@ -15,7 +16,7 @@ BEGIN
     ALTER TYPE affiliate_tier RENAME VALUE 'pending' TO 'starter';
   END IF;
 END$$;
-ALTER TABLE creator_profiles ALTER COLUMN affiliate_tier SET DEFAULT 'starter';
+ALTER TABLE creator_profiles ALTER COLUMN affiliate_tier SET DEFAULT 'verified';
 
 -- Support thread status enum
 DO $$
@@ -42,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_peptides_active ON peptides(is_active);
 -- Support chat — one thread per affiliate
 CREATE TABLE IF NOT EXISTS support_threads (
   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
-  creator_id varchar NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  creator_id varchar NOT NULL UNIQUE REFERENCES "User"(id) ON DELETE CASCADE,
   status support_thread_status NOT NULL DEFAULT 'open',
   last_message_at timestamp DEFAULT now(),
   creator_unread_count integer NOT NULL DEFAULT 0,
@@ -54,7 +55,7 @@ CREATE TABLE IF NOT EXISTS support_threads (
 CREATE TABLE IF NOT EXISTS support_messages (
   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
   thread_id varchar NOT NULL REFERENCES support_threads(id) ON DELETE CASCADE,
-  sender_id varchar NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sender_id varchar NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
   sender_role varchar(16) NOT NULL,
   body varchar(2000) NOT NULL,
   created_at timestamp DEFAULT now()

@@ -185,7 +185,7 @@ export const creatorProfiles = pgTable("creator_profiles", {
   instagramFollowers: integer("instagram_followers"),
   niches: text("niches").array().default(sql`ARRAY[]::text[]`),
   // AFFEXCH peptide pivot — see docs/AFFEXCH_SESSION_HANDOFF.md Phases 2-3
-  affiliateTier: affiliateTierEnum("affiliate_tier").notNull().default('starter'),
+  affiliateTier: affiliateTierEnum("affiliate_tier").notNull().default('verified'),
   city: varchar("city"),
   phone: varchar("phone"),
   createdAt: timestamp("created_at").defaultNow(),
