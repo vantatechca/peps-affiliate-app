@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { GuidesSection } from "../components/AffexchDashboardSections";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
@@ -9,9 +10,22 @@ import {
   Music2,
   Youtube,
   HelpCircle,
+  Megaphone,
+  ShoppingBag,
+  Search,
+  Link2,
+  Tag,
 } from "lucide-react";
 
 export default function CreatorGuidesPage() {
+  // Scroll to the section named in the URL hash (e.g. /creator/guides#promote).
+  useEffect(() => {
+    if (window.location.hash) {
+      const el = document.querySelector(window.location.hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto space-y-4 fx-page">
       <header>
@@ -20,6 +34,65 @@ export default function CreatorGuidesPage() {
           How to share your code and grow your AFFEXCH earnings.
         </p>
       </header>
+
+      {/* How to promote a product */}
+      <Card id="promote" className="scroll-mt-24 border-primary/40">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-primary" /> How to promote a product
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            You can promote any product from any of our merchants. Here's the exact flow:
+          </p>
+          <ol className="space-y-3 text-xs sm:text-sm">
+            <Step
+              n={1}
+              icon={ShoppingBag}
+              title="Pick a product"
+              body="Choose from Hot selling peptides on your dashboard, or open the Merchants page and visit any merchant's store."
+            />
+            <Step
+              n={2}
+              icon={Search}
+              title="Find it on the merchant's site"
+              body="Search the merchant's store for the product you want to promote and open its product page."
+            />
+            <Step
+              n={3}
+              icon={Link2}
+              title="Copy the product URL"
+              body="Copy the link straight from your browser's address bar (e.g. https://merchant.com/products/bpc-157) — or use the product's 'Share / Copy link' button."
+            />
+            <Step
+              n={4}
+              icon={Send}
+              title="Share the URL with your code"
+              body="Put that product URL in your post, bio link, or video description, and tell your audience to enter your promo code at checkout."
+            />
+          </ol>
+
+          {/* Where the code goes — reiterated everywhere */}
+          <div className="rounded-md border border-primary/40 bg-primary/5 p-3">
+            <div className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm mb-1">
+              <Tag className="h-3.5 w-3.5 text-primary" /> Where the code goes
+            </div>
+            <p className="text-[11px] sm:text-xs text-muted-foreground">
+              Your audience must type your code into the <strong className="text-foreground">"Discount code" (or "Promo code") field on the cart or checkout page</strong> — that's what applies their 10% off and credits the sale to you. A code mentioned in a caption but never entered at checkout earns nothing.
+            </p>
+          </div>
+
+          {/* Copyable example */}
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Example caption</p>
+            <pre className="whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-[11px] sm:text-xs text-foreground">
+{`Grab BPC-157 here 👉 https://merchant.com/products/bpc-157
+Use code JEROME50 in the discount code box at checkout for 10% off ✅`}
+            </pre>
+          </div>
+        </CardContent>
+      </Card>
 
       <GuidesSection />
 
@@ -42,7 +115,7 @@ export default function CreatorGuidesPage() {
               n={2}
               icon={Send}
               title="Post your content"
-              body="Post a video / story / image that includes your code AND the merchant's website link, so your audience knows exactly where to buy and apply it at checkout."
+              body="Post a video / story / image that includes your code AND the merchant's product/website link. Tell your audience to enter your code in the Discount code field on the cart or checkout page."
             />
             <Step
               n={3}
@@ -108,6 +181,10 @@ export default function CreatorGuidesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <Faq
+            q="Where does my audience enter the code?"
+            a="In the 'Discount code' (or 'Promo code') field on the cart or checkout page. That's what applies the 10% off and credits the sale to you — a code that's never typed in at checkout doesn't count."
+          />
           <Faq
             q="When do redemptions show up?"
             a="Merchants report sales daily. Most redemptions appear in the Sales Tracker within 24 hours of checkout."

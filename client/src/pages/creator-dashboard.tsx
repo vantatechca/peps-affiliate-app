@@ -320,7 +320,14 @@ function TopPeptideOffers() {
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <FlaskConical className="h-4 w-4 text-primary" /> Hot selling peptides
           </h2>
-          <span className="text-[11px] text-muted-foreground">Refreshed daily</span>
+          <div className="flex items-center gap-3">
+            <Link href="/creator/guides#promote">
+              <a className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                How to promote <ArrowRight className="h-3 w-3" />
+              </a>
+            </Link>
+            <span className="text-[11px] text-muted-foreground">Refreshed daily</span>
+          </div>
         </div>
 
         {isLoading ? (
