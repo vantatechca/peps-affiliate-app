@@ -26,33 +26,34 @@ function normPayout<T extends { status?: any }>(row: T): T {
   return row;
 }
 
-type AffiliateTier = "starter" | "verified" | "silver" | "gold" | "elite";
+type AffiliateTier = "verified" | "starter" | "silver" | "gold" | "elite";
 
-// Tier thresholds — driven by SALES attributed to the affiliate's promo codes.
-// A tier requires meeting BOTH a minimum attributed-order count AND a minimum
-// sales-revenue figure, so neither many tiny orders nor one large order alone
-// can jump the ladder. Tweak these numbers to retune progression.
-const TIER_ORDER: AffiliateTier[] = ["starter", "verified", "silver", "gold", "elite"];
-const TIER_THRESHOLDS: Array<{ tier: AffiliateTier; minOrders: number; minRevenue: number }> = [
-  { tier: "elite", minOrders: 75, minRevenue: 10000 },
-  { tier: "gold", minOrders: 30, minRevenue: 3000 },
-  { tier: "silver", minOrders: 10, minRevenue: 750 },
-  { tier: "verified", minOrders: 1, minRevenue: 1 },
-  { tier: "starter", minOrders: 0, minRevenue: 0 },
+// Tier thresholds — driven solely by the NUMBER of orders attributed to the
+// affiliate's promo codes. A new account starts at "verified" (account
+// confirmed, no sales yet) and climbs by order count:
+//   verified 0 · starter 1–9 · silver 10–29 · gold 30–59 · elite 60+
+// Tweak the minOrders numbers to retune progression.
+const TIER_ORDER: AffiliateTier[] = ["verified", "starter", "silver", "gold", "elite"];
+const TIER_THRESHOLDS: Array<{ tier: AffiliateTier; minOrders: number }> = [
+  { tier: "elite", minOrders: 60 },
+  { tier: "gold", minOrders: 30 },
+  { tier: "silver", minOrders: 10 },
+  { tier: "starter", minOrders: 1 },
+  { tier: "verified", minOrders: 0 },
 ];
 
-// Highest tier whose order AND revenue bars are both met.
-function tierFromSales(orders: number, revenue: number): AffiliateTier {
+// Highest tier whose order bar is met.
+function tierFromSales(orders: number): AffiliateTier {
   for (const t of TIER_THRESHOLDS) {
-    if (orders >= t.minOrders && revenue >= t.minRevenue) return t.tier;
+    if (orders >= t.minOrders) return t.tier;
   }
-  return "starter";
+  return "verified";
 }
 
-// The rung just above the current tier (null at Elite), plus how much more is
-// needed on each axis to get there.
-function nextTierForSales(orders: number, revenue: number) {
-  const current = tierFromSales(orders, revenue);
+// The rung just above the current tier (null at Elite), plus how many more
+// orders are needed to get there.
+function nextTierForSales(orders: number) {
+  const current = tierFromSales(orders);
   const idx = TIER_ORDER.indexOf(current);
   if (idx >= TIER_ORDER.length - 1) return null;
   const nextName = TIER_ORDER[idx + 1];
@@ -60,15 +61,14 @@ function nextTierForSales(orders: number, revenue: number) {
   return {
     tier: t.tier,
     minOrders: t.minOrders,
-    minRevenue: t.minRevenue,
     ordersRemaining: Math.max(0, t.minOrders - orders),
-    revenueRemaining: Math.max(0, Math.round((t.minRevenue - revenue) * 100) / 100),
   };
 }
 
 // Count + revenue of every Order attributed to ANY of the creator's codes.
 // Matches the /api/affiliate/redemptions list, so the dashboard "SALES" stat
-// and the tier ladder always agree.
+// and the tier ladder always agree. (Tier uses orders only; revenue is shown
+// for information.)
 async function getCreatorSalesStats(creatorId: string): Promise<{ orders: number; revenue: number }> {
   const [row] = await db
     .select({
@@ -241,15 +241,15 @@ export function registerAffexchRoutes(app: Express) {
         .where(eq(creatorProfiles.userId, user.id))
         .limit(1);
 
-      // Tier is now derived from sales attributed to the creator's codes
-      // (attributed-order count + sales revenue), recomputed on every read.
+      // Tier is derived from the NUMBER of orders attributed to the creator's
+      // codes, recomputed on every read. (Revenue is returned for display only.)
       const sales = await getCreatorSalesStats(user.id);
-      const tier = tierFromSales(sales.orders, sales.revenue);
-      const nextTier = nextTierForSales(sales.orders, sales.revenue);
+      const tier = tierFromSales(sales.orders);
+      const nextTier = nextTierForSales(sales.orders);
 
       // Keep the stored column in sync so admin/creator list views match
       // (best-effort — don't block the response on it).
-      const stored = (profile?.affiliateTier as any) ?? "starter";
+      const stored = (profile?.affiliateTier as any) ?? "verified";
       if (stored !== tier) {
         db.update(creatorProfiles)
           .set({ affiliateTier: tier, updatedAt: new Date() })
@@ -1879,6 +1879,27 @@ export function registerAffexchRoutes(app: Express) {
     } catch (err: any) {
       console.error("[AFFEXCH] affiliate support GET error:", err);
       res.status(500).json({ error: err?.message || "Failed to load support chat" });
+    }
+  });
+
+  // GET /api/affiliate/support/unread — unread admin-reply count WITHOUT
+  // marking the thread read (the FAB badge polls this). Opening the thread via
+  // GET /api/affiliate/support is what actually clears the count.
+  app.get("/api/affiliate/support/unread", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const [thread] = await db
+        .select({ creatorUnreadCount: supportThreads.creatorUnreadCount })
+        .from(supportThreads)
+        .where(eq(supportThreads.creatorId, user.id))
+        .limit(1);
+      res.json({ unread: thread?.creatorUnreadCount ?? 0 });
+    } catch (err: any) {
+      console.error("[AFFEXCH] affiliate support unread error:", err);
+      res.status(500).json({ error: err?.message || "Failed to load unread count" });
     }
   });
 

@@ -93,6 +93,11 @@
   letter-spacing: 0.02em;
   border: 2px solid #020b14;
   box-shadow: 0 0 12px rgba(255, 0, 102, 0.7);
+  animation: cccfab-badge-pulse 1.6s ease-in-out infinite;
+}
+@keyframes cccfab-badge-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 0, 102, 0.6); transform: scale(1); }
+  50%      { box-shadow: 0 0 18px rgba(255, 0, 102, 0.95); transform: scale(1.12); }
 }
 
 /* ---------- Modal ---------- */

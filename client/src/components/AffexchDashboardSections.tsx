@@ -83,16 +83,15 @@ const CUSTOM_CODE_RE = /^[A-Z0-9]{3,20}$/;
 export type NextTier = {
   tier: string;
   minOrders: number;
-  minRevenue: number;
   ordersRemaining: number;
-  revenueRemaining: number;
 };
 
 export type AffiliateMe = {
   promoCode: string | null;
-  tier: "starter" | "verified" | "silver" | "gold" | "elite";
+  tier: "verified" | "starter" | "silver" | "gold" | "elite";
   nextTier: NextTier | null;
-  // Sales attributed to the creator's promo codes — drives the tier ladder.
+  // Sales attributed to the creator's promo codes. Tier uses orders only;
+  // revenue is shown for information.
   sales: { orders: number; revenue: number };
   city: string | null;
 };
@@ -119,16 +118,16 @@ export type Redemption = {
 };
 
 const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
-  starter: "Starter",
   verified: "Verified",
+  starter: "Starter",
   silver: "Silver",
   gold: "Gold",
   elite: "Elite",
 };
 
 const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
-  starter: "bg-muted text-muted-foreground border-border",
-  verified: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
+  verified: "bg-muted text-muted-foreground border-border",
+  starter: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
   silver: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700",
   gold: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800",
   elite: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950 dark:text-fuchsia-400 dark:border-fuchsia-800",
@@ -490,17 +489,9 @@ export function MilestoneSection({ me: meProp }: { me?: AffiliateMe } = {}) {
   const orders = me.sales?.orders ?? 0;
   const revenue = me.sales?.revenue ?? 0;
   const next = me.nextTier;
-  // Progress toward the next rung = whichever axis (orders / revenue) is least complete.
+  // Progress toward the next rung is based on order count.
   const pct = next
-    ? Math.min(
-        100,
-        Math.round(
-          Math.min(
-            next.minOrders ? orders / next.minOrders : 1,
-            next.minRevenue ? revenue / next.minRevenue : 1,
-          ) * 100,
-        ),
-      )
+    ? Math.min(100, Math.round((next.minOrders ? orders / next.minOrders : 1) * 100))
     : 100;
 
   return (
@@ -528,14 +519,7 @@ export function MilestoneSection({ me: meProp }: { me?: AffiliateMe } = {}) {
               <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
             </div>
             <p className="text-xs text-muted-foreground">
-              {next.ordersRemaining > 0 && (
-                <>
-                  {next.ordersRemaining} more {next.ordersRemaining === 1 ? "sale" : "sales"}
-                  {next.revenueRemaining > 0 ? " and " : " "}
-                </>
-              )}
-              {next.revenueRemaining > 0 && <>${next.revenueRemaining.toFixed(2)} more revenue </>}
-              to reach{" "}
+              {next.ordersRemaining} more {next.ordersRemaining === 1 ? "sale" : "sales"} to reach{" "}
               <span className="font-semibold text-foreground">{TIER_LABEL[next.tier as AffiliateMe["tier"]]}</span>.
             </p>
           </>

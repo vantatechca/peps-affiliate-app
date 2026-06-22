@@ -25,16 +25,16 @@ import {
 import { AffexchBootLoader } from "../components/AffexchBootLoader";
 
 const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
-  starter: "Starter",
   verified: "Verified",
+  starter: "Starter",
   silver: "Silver",
   gold: "Gold",
   elite: "Elite",
 };
 
 const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
-  starter: "bg-muted text-muted-foreground border-border",
-  verified: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
+  verified: "bg-muted text-muted-foreground border-border",
+  starter: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
   silver: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700",
   gold: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800",
   elite: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950 dark:text-fuchsia-400 dark:border-fuchsia-800",
@@ -63,7 +63,7 @@ export default function CreatorDashboard() {
     0,
   );
   const salesCount = redemptions?.length ?? 0;
-  const tier = me?.tier ?? "starter";
+  const tier = me?.tier ?? "verified";
   const city = me?.city ?? null;
 
   // Build a 14-day earnings series for the dashboard chart.
