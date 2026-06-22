@@ -290,7 +290,7 @@ function buildEarningsSeries(rows: Redemption[], days: number) {
 type PeptideOffer = {
   id: string;
   productName: string;
-  merchantUrl: string;
+  merchantUrl: string | null;
   discountPercent: number;
   commissionPercent: number;
 };
@@ -310,7 +310,7 @@ function TopPeptideOffers() {
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-primary" /> Top peptide offers to promote
+            <FlaskConical className="h-4 w-4 text-primary" /> Hot selling peptides
           </h2>
           <span className="text-[11px] text-muted-foreground">Refreshed daily</span>
         </div>
@@ -318,29 +318,37 @@ function TopPeptideOffers() {
         {isLoading ? (
           <p className="text-xs text-muted-foreground">Loading…</p>
         ) : !data.length ? (
-          <p className="text-xs text-muted-foreground">No offers available right now — check back soon.</p>
+          <p className="text-xs text-muted-foreground">No peptides listed right now — check back soon.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {data.map((p) => (
-              <a
-                key={p.id}
-                href={p.merchantUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-md border bg-background hover:border-primary/50 transition-colors p-3 flex flex-col gap-2"
-              >
-                <p className="font-medium text-sm leading-tight">{p.productName}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="outline" className="text-[10px]">{p.discountPercent}% off</Badge>
-                  <Badge className="text-[10px] bg-primary/15 text-primary border-primary/40">
+            {data.map((p) => {
+              const inner = (
+                <>
+                  <p className="font-medium text-sm leading-tight">{p.productName}</p>
+                  <Badge className="text-[10px] bg-primary/15 text-primary border-primary/40 w-fit">
                     {p.commissionPercent}% commission
                   </Badge>
+                </>
+              );
+              return p.merchantUrl ? (
+                <a
+                  key={p.id}
+                  href={p.merchantUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border bg-background hover:border-primary/50 transition-colors p-3 flex flex-col gap-2"
+                >
+                  {inner}
+                </a>
+              ) : (
+                <div
+                  key={p.id}
+                  className="rounded-md border bg-background p-3 flex flex-col gap-2"
+                >
+                  {inner}
                 </div>
-                <span className="text-[11px] text-primary flex items-center gap-1 mt-auto">
-                  Promote <ArrowRight className="h-3 w-3" />
-                </span>
-              </a>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

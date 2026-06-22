@@ -75,6 +75,10 @@ function buildPromoSuggestions(email?: string, firstName?: string): string[] {
 
 const CUSTOM_CODE_RE = /^[A-Z0-9]{3,20}$/;
 
+// Affiliates can self-serve up to this many codes; beyond it they ask an admin
+// via support chat. Keep in sync with server MAX_PROMO_CODES.
+const MAX_PROMO_CODES = 3;
+
 // AFFEXCH peptide pivot — dashboard sections per docs/AFFEXCH_SESSION_HANDOFF.md §5 Phase 4
 // Six sections: PROMO CODE / SALES TRACKER / MILESTONE PROGRESS / SUBMITTED LINKS / SUBMIT A LINK / GUIDES
 // Each section is exported individually so it can render either on the
@@ -250,7 +254,7 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
           Share these with your audience. They enter one at checkout on peptide merchant sites
-          for {CUSTOMER_DISCOUNT_PERCENT}% off — and the sale is credited to you. You can have more than one.
+          for {CUSTOMER_DISCOUNT_PERCENT}% off — and the sale is credited to you. You can create up to {MAX_PROMO_CODES}.
         </p>
 
         {list.length === 0 ? (
@@ -352,7 +356,13 @@ export function PromoCodeSection(_props: { me?: AffiliateMe } = {}) {
           </div>
         )}
 
-        {!adding ? (
+        {list.length >= MAX_PROMO_CODES && !adding ? (
+          <div className="px-3 py-2 sm:py-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground text-xs sm:text-sm">
+            You've reached the limit of {MAX_PROMO_CODES} promo codes. Need more?{" "}
+            <span className="text-foreground font-medium">Message the support team in chat</span>{" "}
+            (the SUPPORT button, bottom-right) and we'll set them up for you.
+          </div>
+        ) : !adding ? (
           <Button
             onClick={() => { setAdding(true); setErr(""); setValue(""); }}
             className="min-h-11 sm:min-h-10"
