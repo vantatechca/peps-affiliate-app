@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import bcrypt from "bcrypt";
+import { randomUUID } from "crypto";
 import { storage } from "./storage";
 import type { User } from "../shared/schema";
 
@@ -188,11 +190,16 @@ export async function setupGoogleAuth(app: Express) {
         return res.status(400).json({ error: "Invalid role. Must be 'creator' or 'company'" });
       }
 
+      // OAuth users have no password, but the legacy "User".passwordHash column
+      // is NOT NULL. Store a random hash they'll never know — password login
+      // stays effectively disabled; they always sign in via Google.
+      const randomPasswordHash = await bcrypt.hash(`${randomUUID()}${randomUUID()}`, 10);
+
       // Create the user with the selected role
       const newUser = await storage.createUser({
         username: pendingUser.username,
         email: pendingUser.email,
-        password: null, // No password for OAuth users
+        password: randomPasswordHash,
         googleId: pendingUser.googleId,
         firstName: pendingUser.firstName,
         lastName: pendingUser.lastName,

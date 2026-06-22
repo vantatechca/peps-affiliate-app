@@ -51,7 +51,7 @@ export default function SelectRole() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="relative z-10 min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex items-center justify-center gap-2">
           <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center">
@@ -60,7 +60,7 @@ export default function SelectRole() {
           <span className="text-2xl font-bold">AffiliateXchange</span>
         </div>
 
-        <Card>
+        <Card className="bg-panel neon-border neon-glow rounded-lg backdrop-blur-md">
           <CardHeader className="text-center">
             <CardTitle>You're almost in</CardTitle>
             <CardDescription>
