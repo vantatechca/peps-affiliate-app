@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
-import AffiliateCommunityChat from "../landing-affexch/community/AffiliateCommunityChat";
+import CreatorSupportChat from "./CreatorSupportChat";
 import "../landing-affexch/community/AffiliateCommunityChat.css";
 import "./CreatorCommunityChatFab.css";
 
-// Creator-side community chat launcher.
-// Same chat panel as the landing page, but the FAB lives in the bottom-LEFT
-// corner so it doesn't collide with the right-side topbar / scrollbar inside
-// the authenticated app shell.
+// Creator-side support chat launcher.
+// Opens the affiliate's private support thread with the admin team. The FAB
+// lives in the bottom-LEFT corner so it doesn't collide with the right-side
+// topbar / scrollbar inside the authenticated app shell.
 
 export function CreatorCommunityChatFab() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [unread, setUnread] = useState(3); // teaser badge until first open
+  const [unread, setUnread] = useState(0); // unread admin replies
 
   // Two-phase mount/unmount so the entrance/exit animation can play smoothly.
   useEffect(() => {
@@ -23,9 +23,29 @@ export function CreatorCommunityChatFab() {
     }
   }, [open]);
 
-  // Clear teaser once opened
+  // Poll the thread for unread admin replies (skip while open — opening clears them).
   useEffect(() => {
-    if (open) setUnread(0);
+    if (open) {
+      setUnread(0);
+      return;
+    }
+    let alive = true;
+    const poll = async () => {
+      try {
+        const r = await fetch("/api/affiliate/support", { credentials: "include" });
+        if (!r.ok) return;
+        const data = await r.json();
+        if (alive) setUnread(data?.thread?.creatorUnreadCount ?? 0);
+      } catch {
+        /* ignore */
+      }
+    };
+    poll();
+    const iv = setInterval(poll, 15000);
+    return () => {
+      alive = false;
+      clearInterval(iv);
+    };
   }, [open]);
 
   // Esc closes
@@ -52,9 +72,9 @@ export function CreatorCommunityChatFab() {
         type="button"
         className={"cccfab" + (open ? " cccfab--hidden" : "")}
         onClick={() => setOpen(true)}
-        aria-label="Open community chat"
+        aria-label="Open support chat"
         aria-expanded={open}
-        aria-controls="creator-community-chat-popup"
+        aria-controls="creator-support-chat-popup"
       >
         <span className="cccfab__ring" />
         <span className="cccfab__pulse" />
@@ -62,16 +82,16 @@ export function CreatorCommunityChatFab() {
         {unread > 0 && (
           <span className="cccfab__badge" aria-label={`${unread} new messages`}>{unread}</span>
         )}
-        <span className="cccfab__label">CHAT</span>
+        <span className="cccfab__label">SUPPORT</span>
       </button>
 
       {mounted && (
         <div
-          id="creator-community-chat-popup"
+          id="creator-support-chat-popup"
           className={"cccp" + (open ? " is-open" : " is-closing")}
           role="dialog"
           aria-modal="true"
-          aria-label="Community chat"
+          aria-label="Support chat"
         >
           <button
             type="button"
@@ -80,7 +100,7 @@ export function CreatorCommunityChatFab() {
             onClick={() => setOpen(false)}
           />
           <div className="cccp__panel">
-            <AffiliateCommunityChat onClose={() => setOpen(false)} />
+            <CreatorSupportChat onClose={() => setOpen(false)} />
           </div>
         </div>
       )}

@@ -62,6 +62,8 @@ import AdminCreatorDetail from "./pages/admin-creator-detail";
 import AdminAuditLogs from "./pages/admin-audit-logs";
 import AdminContentLinks from "./pages/admin-content-links";
 import AdminAnalytics from "./pages/admin-analytics";
+import AdminPeptides from "./pages/admin-peptides";
+import AdminSupport from "./pages/admin-support";
 // Phase 9: onboarding wizards removed (collected payment-method info that no longer exists).
 // CompanyProfile is kept — public peptide-vendor profile view (read-only for affiliates).
 import CompanyProfile from "./pages/company-profile";
@@ -343,6 +345,8 @@ function ProtectedRouter() {
               <Route path="/admin/creators" component={AdminCreators} />
               <Route path="/admin/creators/:id" component={AdminCreatorDetail} />
               <Route path="/admin/content-links" component={AdminContentLinks} />
+              <Route path="/admin/peptides" component={AdminPeptides} />
+              <Route path="/admin/support" component={AdminSupport} />
               <Route path="/admin/audit-logs" component={AdminAuditLogs} />
               <Route path="/admin/payouts" component={AdminPayoutsPage} />
               <Route path="/admin/analytics" component={AdminAnalytics} />

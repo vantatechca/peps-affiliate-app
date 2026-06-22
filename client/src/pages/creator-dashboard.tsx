@@ -7,16 +7,13 @@ import { Badge } from "../components/ui/badge";
 import {
   Sparkles,
   TrendingUp,
-  TrendingDown,
-  Minus,
   Award,
   ArrowRight,
-  CheckCircle2,
   DollarSign,
   MapPin,
-  Store,
+  FlaskConical,
 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import {
   useAffiliateMe,
@@ -26,11 +23,9 @@ import {
   type Redemption,
 } from "../components/AffexchDashboardSections";
 import { AffexchBootLoader } from "../components/AffexchBootLoader";
-import { CityCombobox } from "../components/CityCombobox";
-import { MerchantLogo } from "../components/MerchantLogo";
 
 const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
-  pending: "Pending",
+  starter: "Starter",
   verified: "Verified",
   silver: "Silver",
   gold: "Gold",
@@ -38,7 +33,7 @@ const TIER_LABEL: Record<AffiliateMe["tier"], string> = {
 };
 
 const TIER_BADGE_CLASS: Record<AffiliateMe["tier"], string> = {
-  pending: "bg-muted text-muted-foreground border-border",
+  starter: "bg-muted text-muted-foreground border-border",
   verified: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800",
   silver: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700",
   gold: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800",
@@ -68,9 +63,7 @@ export default function CreatorDashboard() {
     0,
   );
   const salesCount = redemptions?.length ?? 0;
-  const approved = me?.linkCounts.approved ?? 0;
-  const pending = me?.linkCounts.pending ?? 0;
-  const tier = me?.tier ?? "pending";
+  const tier = me?.tier ?? "starter";
   const city = me?.city ?? null;
 
   // Build a 14-day earnings series for the dashboard chart.
@@ -163,10 +156,7 @@ export default function CreatorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Merchants near you */}
-        <MerchantsNearby />
-
-        {/* Earnings chart */}
+        {/* Earnings chart — comes before the offers list */}
         <Card>
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
@@ -222,6 +212,9 @@ export default function CreatorDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Top peptide offers to promote — admin-curated, shuffled daily */}
+        <TopPeptideOffers />
 
       </div>
 
@@ -291,81 +284,61 @@ function buildEarningsSeries(rows: Redemption[], days: number) {
   return out;
 }
 
-// ---- Merchants near you (dashboard strip) — discovery only, no sales/level ----
-type NearbyMerchant = {
-  id: string; name: string; domain: string | null; website: string | null;
-  city: string | null; country: string | null;
+// ---- Top peptide offers to promote (dashboard strip) ----
+// Admin-curated catalogue served from /api/affiliate/peptides, shuffled daily
+// server-side so the list rotates every day.
+type PeptideOffer = {
+  id: string;
+  productName: string;
+  merchantUrl: string;
+  discountPercent: number;
+  commissionPercent: number;
 };
-type NearbyResp = { city: string | null; detectedCity: string | null; scope: "city" | "country" | "all"; merchants: NearbyMerchant[] };
 
-function MerchantsNearby() {
-  const qc = useQueryClient();
-  const [useLocation, setUseLocation] = useState(false);
-  const { data: cities = [] } = useQuery<string[]>({ queryKey: ["/api/affiliate/merchant-cities"] });
-  const { data, isLoading } = useQuery<NearbyResp>({
-    queryKey: ["/api/affiliate/merchants/nearby", useLocation ? "ip" : "saved"],
+function TopPeptideOffers() {
+  const { data = [], isLoading } = useQuery<PeptideOffer[]>({
+    queryKey: ["/api/affiliate/peptides"],
     queryFn: async () => {
-      const r = await fetch(`/api/affiliate/merchants/nearby?limit=4${useLocation ? "&ip=1" : ""}`, { credentials: "include" });
-      if (!r.ok) throw new Error("Failed to load nearby merchants");
+      const r = await fetch("/api/affiliate/peptides?limit=6", { credentials: "include" });
+      if (!r.ok) throw new Error("Failed to load peptide offers");
       return r.json();
     },
   });
-
-  const setCity = useMutation({
-    mutationFn: async (city: string) => {
-      const r = await fetch("/api/affiliate/me/city", {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ city }),
-      });
-      if (!r.ok) throw new Error("Failed to set city");
-      return r.json();
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/affiliate/merchants/nearby"] });
-      qc.invalidateQueries({ queryKey: ["/api/affiliate/me"] });
-    },
-  });
-
-  const scopeLabel = useLocation && data?.detectedCity ? `near ${data.detectedCity}`
-    : useLocation ? `near you`
-    : data?.scope === "city" && data.city ? `near ${data.city}`
-    : data?.scope === "country" ? `in your country` : `top merchants`;
 
   return (
     <Card>
       <CardContent className="p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
-            <Store className="h-4 w-4 text-primary" /> Merchants {scopeLabel}
+            <FlaskConical className="h-4 w-4 text-primary" /> Top peptide offers to promote
           </h2>
-          <CityCombobox
-            cities={cities}
-            value={useLocation ? "Your current location" : (data?.city ?? null)}
-            onChange={(c) => { setUseLocation(false); setCity.mutate(c); }}
-            currentLocationLabel="Your current location"
-            onCurrentLocation={() => setUseLocation(true)}
-          />
+          <span className="text-[11px] text-muted-foreground">Refreshed daily</span>
         </div>
 
         {isLoading ? (
           <p className="text-xs text-muted-foreground">Loading…</p>
-        ) : !data?.merchants.length ? (
-          <p className="text-xs text-muted-foreground">No merchants found. Pick your city above.</p>
+        ) : !data.length ? (
+          <p className="text-xs text-muted-foreground">No offers available right now — check back soon.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {data.merchants.map((m) => (
+            {data.map((p) => (
               <a
-                key={m.id}
-                href={m.website ?? undefined}
+                key={p.id}
+                href={p.merchantUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-md border bg-background hover:border-primary/50 transition-colors p-2.5 flex items-center gap-2"
+                className="rounded-md border bg-background hover:border-primary/50 transition-colors p-3 flex flex-col gap-2"
               >
-                <MerchantLogo domain={m.domain} name={m.name} className="h-8 w-8 rounded shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-medium text-xs truncate">{m.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{m.city}</p>
+                <p className="font-medium text-sm leading-tight">{p.productName}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge variant="outline" className="text-[10px]">{p.discountPercent}% off</Badge>
+                  <Badge className="text-[10px] bg-primary/15 text-primary border-primary/40">
+                    {p.commissionPercent}% commission
+                  </Badge>
                 </div>
+                <span className="text-[11px] text-primary flex items-center gap-1 mt-auto">
+                  Promote <ArrowRight className="h-3 w-3" />
+                </span>
               </a>
             ))}
           </div>

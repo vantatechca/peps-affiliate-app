@@ -8,6 +8,8 @@ import {
   BarChart3,
   CheckCircle,
   Wallet,
+  FlaskConical,
+  LifeBuoy,
   ChevronDown,
 } from "lucide-react";
 import {
@@ -30,8 +32,10 @@ const ITEMS: Item[] = [
     children: [
       { title: "Merchants", url: "/admin/merchants", icon: Building2 },
       { title: "Creators", url: "/admin/creators", icon: Users },
+      { title: "Peptide Offers", url: "/admin/peptides", icon: FlaskConical },
     ],
   },
+  { title: "Support", url: "/admin/support", icon: LifeBuoy },
   { title: "Payouts", url: "/admin/payouts", icon: Wallet },
   { title: "Audit Trail", url: "/admin/audit-logs", icon: ScrollText },
 ];

@@ -3,8 +3,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createHash, timingSafeEqual, randomUUID } from "crypto";
 import { db, pool } from "./db";
-import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, communityChatMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
-import { eq, and, desc, sql, inArray, sum } from "drizzle-orm";
+import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, peptides, supportThreads, supportMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
+import { eq, and, asc, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { getCreatorPromoCode, setCreatorPromoCode, listCreatorPromoCodes, createCreatorPromoCode, setPromoCodeActive, getPromoCodeDeletionInfo, deleteCreatorPromoCode } from "./affexchPromoCode";
 import { getRankedMerchants } from "./merchants";
@@ -26,27 +26,59 @@ function normPayout<T extends { status?: any }>(row: T): T {
   return row;
 }
 
-// Tier thresholds (approved content_links count → tier).
-// Source of truth: docs/AFFEXCH_SESSION_HANDOFF.md §3 ("0=PENDING, 1=VERIFIED, 5=SILVER, 10=GOLD, 20=ELITE")
-const TIER_THRESHOLDS: Array<{ tier: "pending" | "verified" | "silver" | "gold" | "elite"; min: number }> = [
-  { tier: "elite", min: 20 },
-  { tier: "gold", min: 10 },
-  { tier: "silver", min: 5 },
-  { tier: "verified", min: 1 },
-  { tier: "pending", min: 0 },
+type AffiliateTier = "starter" | "verified" | "silver" | "gold" | "elite";
+
+// Tier thresholds — driven by SALES attributed to the affiliate's promo codes.
+// A tier requires meeting BOTH a minimum attributed-order count AND a minimum
+// sales-revenue figure, so neither many tiny orders nor one large order alone
+// can jump the ladder. Tweak these numbers to retune progression.
+const TIER_ORDER: AffiliateTier[] = ["starter", "verified", "silver", "gold", "elite"];
+const TIER_THRESHOLDS: Array<{ tier: AffiliateTier; minOrders: number; minRevenue: number }> = [
+  { tier: "elite", minOrders: 75, minRevenue: 10000 },
+  { tier: "gold", minOrders: 30, minRevenue: 3000 },
+  { tier: "silver", minOrders: 10, minRevenue: 750 },
+  { tier: "verified", minOrders: 1, minRevenue: 1 },
+  { tier: "starter", minOrders: 0, minRevenue: 0 },
 ];
 
-function tierFromApprovedCount(approved: number) {
-  for (const t of TIER_THRESHOLDS) if (approved >= t.min) return t.tier;
-  return "pending" as const;
+// Highest tier whose order AND revenue bars are both met.
+function tierFromSales(orders: number, revenue: number): AffiliateTier {
+  for (const t of TIER_THRESHOLDS) {
+    if (orders >= t.minOrders && revenue >= t.minRevenue) return t.tier;
+  }
+  return "starter";
 }
 
-function nextTierForApprovedCount(approved: number) {
-  for (let i = TIER_THRESHOLDS.length - 2; i >= 0; i--) {
-    const t = TIER_THRESHOLDS[i];
-    if (approved < t.min) return { tier: t.tier, min: t.min, remaining: t.min - approved };
-  }
-  return null;
+// The rung just above the current tier (null at Elite), plus how much more is
+// needed on each axis to get there.
+function nextTierForSales(orders: number, revenue: number) {
+  const current = tierFromSales(orders, revenue);
+  const idx = TIER_ORDER.indexOf(current);
+  if (idx >= TIER_ORDER.length - 1) return null;
+  const nextName = TIER_ORDER[idx + 1];
+  const t = TIER_THRESHOLDS.find((x) => x.tier === nextName)!;
+  return {
+    tier: t.tier,
+    minOrders: t.minOrders,
+    minRevenue: t.minRevenue,
+    ordersRemaining: Math.max(0, t.minOrders - orders),
+    revenueRemaining: Math.max(0, Math.round((t.minRevenue - revenue) * 100) / 100),
+  };
+}
+
+// Count + revenue of every Order attributed to ANY of the creator's codes.
+// Matches the /api/affiliate/redemptions list, so the dashboard "SALES" stat
+// and the tier ladder always agree.
+async function getCreatorSalesStats(creatorId: string): Promise<{ orders: number; revenue: number }> {
+  const [row] = await db
+    .select({
+      orders: sql<number>`count(*)::int`,
+      revenue: sql<string>`coalesce(sum(${legacyOrders.orderTotal}), '0')`,
+    })
+    .from(legacyOrders)
+    .innerJoin(promoCodes, eq(legacyOrders.promoCodeId, promoCodes.id))
+    .where(eq(promoCodes.creatorId, creatorId));
+  return { orders: row?.orders ?? 0, revenue: parseFloat(row?.revenue ?? "0") };
 }
 
 const PLATFORM_REGEX = /^(youtube|tiktok|instagram)$/i;
@@ -203,21 +235,33 @@ export function registerAffexchRoutes(app: Express) {
       // Code page. No auto-generation.
       const code = await getCreatorPromoCode(user.id);
 
-      // CUTOVER: content_links is a cut feature/table on the old DB. Tier now
-      // comes straight from creator_profiles (no link-count derivation).
       const [profile] = await db
         .select({ affiliateTier: creatorProfiles.affiliateTier, city: creatorProfiles.city })
         .from(creatorProfiles)
         .where(eq(creatorProfiles.userId, user.id))
         .limit(1);
 
-      const tier = (profile?.affiliateTier as any) ?? "pending";
+      // Tier is now derived from sales attributed to the creator's codes
+      // (attributed-order count + sales revenue), recomputed on every read.
+      const sales = await getCreatorSalesStats(user.id);
+      const tier = tierFromSales(sales.orders, sales.revenue);
+      const nextTier = nextTierForSales(sales.orders, sales.revenue);
+
+      // Keep the stored column in sync so admin/creator list views match
+      // (best-effort — don't block the response on it).
+      const stored = (profile?.affiliateTier as any) ?? "starter";
+      if (stored !== tier) {
+        db.update(creatorProfiles)
+          .set({ affiliateTier: tier, updatedAt: new Date() })
+          .where(eq(creatorProfiles.userId, user.id))
+          .catch((e) => console.error("[AFFEXCH] tier sync failed:", e));
+      }
 
       res.json({
         promoCode: code,
         tier,
-        nextTier: null,
-        linkCounts: { pending: 0, approved: 0, rejected: 0 },
+        nextTier,
+        sales,
         city: profile?.city ?? null,
       });
     } catch (err: any) {
@@ -1550,31 +1594,10 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // Helper: recompute tier from approved-link count and update profile if it changed.
-  // Returns { oldTier, newTier, approved } so callers can fire notifications on bump.
-  async function recomputeAffiliateTier(creatorId: string) {
-    const rows = await db
-      .select({ status: contentLinks.status })
-      .from(contentLinks)
-      .where(eq(contentLinks.creatorId, creatorId));
-    const approved = rows.filter((r) => r.status === "approved").length;
-    const newTier = tierFromApprovedCount(approved);
-
-    const [profile] = await db
-      .select({ affiliateTier: creatorProfiles.affiliateTier })
-      .from(creatorProfiles)
-      .where(eq(creatorProfiles.userId, creatorId))
-      .limit(1);
-    const oldTier = profile?.affiliateTier ?? "pending";
-
-    if (oldTier !== newTier) {
-      await db
-        .update(creatorProfiles)
-        .set({ affiliateTier: newTier, updatedAt: new Date() })
-        .where(eq(creatorProfiles.userId, creatorId));
-    }
-    return { oldTier, newTier, approved };
-  }
+  // NOTE: Affiliate tier no longer derives from approved content links — it is
+  // computed from sales attributed to the creator's promo codes (see
+  // tierFromSales / getCreatorSalesStats). Content-link approval is still a
+  // review workflow but it no longer moves the tier.
 
   // POST /api/admin/content-links/:id/approve
   app.post("/api/admin/content-links/:id/approve", isAuthenticated, requireAdmin, async (req: Request, res) => {
@@ -1597,41 +1620,27 @@ export function registerAffexchRoutes(app: Express) {
         .where(eq(contentLinks.id, linkId))
         .returning();
 
-      const { oldTier, newTier } = await recomputeAffiliateTier(link.creatorId);
-
       await writeAudit(req, "approve_content_link", "content_link", linkId, {
         creatorId: link.creatorId,
         url: link.url,
         platform: link.platform,
-        oldTier,
-        newTier,
       });
 
       // In-app notification (no email — Phase 6.5 removed email integration)
       try {
         const ns = new NotificationService(storage);
-        if (oldTier !== newTier) {
-          await ns.sendNotification(
-            link.creatorId,
-            "system_announcement" as any,
-            `You reached ${newTier.toUpperCase()} tier!`,
-            `Your latest content link was approved and you've been bumped to the ${newTier} tier.`,
-            { linkUrl: "/creator/dashboard" }
-          );
-        } else {
-          await ns.sendNotification(
-            link.creatorId,
-            "system_announcement" as any,
-            "Content link approved",
-            "Your submitted link was approved by the admin team.",
-            { linkUrl: "/creator/dashboard" }
-          );
-        }
+        await ns.sendNotification(
+          link.creatorId,
+          "system_announcement" as any,
+          "Content link approved",
+          "Your submitted link was approved by the admin team.",
+          { linkUrl: "/creator/dashboard" }
+        );
       } catch (notifyErr) {
         console.error("[AFFEXCH] notify on approve failed:", notifyErr);
       }
 
-      res.json({ success: true, contentLink: updated, oldTier, newTier });
+      res.json({ success: true, contentLink: updated });
     } catch (err: any) {
       console.error("[AFFEXCH] admin approve error:", err);
       res.status(500).json({ error: err?.message || "Approval failed" });
@@ -1662,22 +1671,11 @@ export function registerAffexchRoutes(app: Express) {
         .where(eq(contentLinks.id, linkId))
         .returning();
 
-      // If flipping approved → rejected, recompute tier (might drop down).
-      let oldTier: string | undefined;
-      let newTier: string | undefined;
-      if (wasApproved) {
-        const tiers = await recomputeAffiliateTier(link.creatorId);
-        oldTier = tiers.oldTier;
-        newTier = tiers.newTier;
-      }
-
       await writeAudit(req, "reject_content_link", "content_link", linkId, {
         creatorId: link.creatorId,
         url: link.url,
         platform: link.platform,
         wasApproved,
-        oldTier,
-        newTier,
       }, reason);
 
       try {
@@ -1695,73 +1693,349 @@ export function registerAffexchRoutes(app: Express) {
         console.error("[AFFEXCH] notify on reject failed:", notifyErr);
       }
 
-      res.json({ success: true, contentLink: updated, oldTier, newTier });
+      res.json({ success: true, contentLink: updated });
     } catch (err: any) {
       console.error("[AFFEXCH] admin reject error:", err);
       res.status(500).json({ error: err?.message || "Rejection failed" });
     }
   });
 
-  // ===== Community chat (public, anonymous) =====
-  // Landing-page chat popup. No auth — anyone can read + post with a
-  // pseudonymous handle. In-memory rate limit guards against spam.
+  // ===== Top peptide offers to promote =====
+  // Admin-curated catalogue, shuffled once per day on the affiliate dashboard.
 
-  const COMMUNITY_HANDLE_REGEX = /^[a-z0-9_]{2,32}$/i;
-  const recentPostsByIp = new Map<string, number[]>(); // ip → recent post timestamps
-  const COMMUNITY_POST_LIMIT = 5; // max posts per minute per IP
-  const COMMUNITY_WINDOW_MS = 60_000;
+  // Deterministic per-day seed (UTC) so the order is stable within a day but
+  // rotates every day.
+  function dailySeed(): number {
+    const d = new Date();
+    return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+  }
+  // mulberry32 seeded shuffle — same seed ⇒ same order.
+  function seededShuffle<T>(arr: T[], seed: number): T[] {
+    let a = seed >>> 0;
+    const rand = () => {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const out = arr.slice();
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
 
-  // GET /api/community-chat?limit=50 — recent messages, oldest→newest
-  app.get("/api/community-chat", async (req: Request, res) => {
+  function validatePeptideBody(body: any): { value?: any; error?: string } {
+    const productName = typeof body?.productName === "string" ? body.productName.trim() : "";
+    const merchantUrl = typeof body?.merchantUrl === "string" ? body.merchantUrl.trim() : "";
+    if (!productName || productName.length > 120) {
+      return { error: "productName is required (max 120 chars)" };
+    }
+    if (!merchantUrl || !URL_REGEX.test(merchantUrl) || merchantUrl.length > 500) {
+      return { error: "A valid merchantUrl (http:// or https://) is required" };
+    }
+    const toPct = (v: any, dflt: number) => {
+      if (v === undefined || v === null || v === "") return dflt;
+      const n = Math.round(Number(v));
+      return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : dflt;
+    };
+    return {
+      value: {
+        productName,
+        merchantUrl,
+        discountPercent: toPct(body?.discountPercent, 10),
+        commissionPercent: toPct(body?.commissionPercent, 20),
+        isActive: body?.isActive === undefined ? true : !!body.isActive,
+        displayOrder:
+          body?.displayOrder === undefined || body?.displayOrder === null || body?.displayOrder === ""
+            ? null
+            : Math.round(Number(body.displayOrder)) || null,
+      },
+    };
+  }
+
+  // GET /api/affiliate/peptides — active offers, shuffled daily.
+  app.get("/api/affiliate/peptides", isAuthenticated, async (req: Request, res) => {
     try {
-      const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? "50"), 10) || 50, 1), 100);
-      const rows = await db
-        .select()
-        .from(communityChatMessages)
-        .orderBy(desc(communityChatMessages.createdAt))
-        .limit(limit);
-      // Reverse so the client gets oldest→newest (matches chat-feed semantics)
-      res.json(rows.reverse());
+      const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? "6"), 10) || 6, 1), 24);
+      const rows = await db.select().from(peptides).where(eq(peptides.isActive, true));
+      res.json(seededShuffle(rows, dailySeed()).slice(0, limit));
     } catch (err: any) {
-      console.error("[AFFEXCH] community-chat GET error:", err);
-      res.status(500).json({ error: err?.message || "Failed to load chat" });
+      console.error("[AFFEXCH] affiliate peptides GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to load peptide offers" });
     }
   });
 
-  // POST /api/community-chat — body { handle, text }
-  app.post("/api/community-chat", async (req: Request, res) => {
+  // GET /api/admin/peptides — full list for management.
+  app.get("/api/admin/peptides", isAuthenticated, requireAdmin, async (_req: Request, res) => {
     try {
-      const { handle, text } = req.body ?? {};
-      if (!handle || typeof handle !== "string" || !COMMUNITY_HANDLE_REGEX.test(handle)) {
-        return res.status(400).json({ error: "Handle must be 2-32 chars: letters, numbers, underscores" });
-      }
-      if (!text || typeof text !== "string") {
-        return res.status(400).json({ error: "Message text required" });
-      }
-      const trimmed = text.trim();
-      if (trimmed.length < 1 || trimmed.length > 280) {
-        return res.status(400).json({ error: "Message must be 1-280 chars" });
-      }
+      const rows = await db
+        .select()
+        .from(peptides)
+        .orderBy(asc(peptides.displayOrder), desc(peptides.createdAt));
+      res.json(rows);
+    } catch (err: any) {
+      console.error("[AFFEXCH] admin peptides GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to list peptides" });
+    }
+  });
 
-      // Per-IP rate limit
-      const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
-      const now = Date.now();
-      const recent = (recentPostsByIp.get(ip) ?? []).filter((t) => now - t < COMMUNITY_WINDOW_MS);
-      if (recent.length >= COMMUNITY_POST_LIMIT) {
-        return res.status(429).json({ error: "Slow down — too many messages in the last minute" });
-      }
-      recent.push(now);
-      recentPostsByIp.set(ip, recent);
-
-      const [row] = await db
-        .insert(communityChatMessages)
-        .values({ handle: handle.toLowerCase(), text: trimmed })
-        .returning();
-
+  // POST /api/admin/peptides — add an offer.
+  app.post("/api/admin/peptides", isAuthenticated, requireAdmin, async (req: Request, res) => {
+    try {
+      const { value, error } = validatePeptideBody(req.body);
+      if (error) return res.status(400).json({ error });
+      const [row] = await db.insert(peptides).values(value).returning();
+      await writeAudit(req, "create_peptide", "peptide", row.id, { productName: row.productName });
       res.json(row);
     } catch (err: any) {
-      console.error("[AFFEXCH] community-chat POST error:", err);
-      res.status(500).json({ error: err?.message || "Failed to post message" });
+      console.error("[AFFEXCH] admin peptides POST error:", err);
+      res.status(500).json({ error: err?.message || "Failed to create peptide" });
+    }
+  });
+
+  // PATCH /api/admin/peptides/:id — edit / toggle an offer.
+  app.patch("/api/admin/peptides/:id", isAuthenticated, requireAdmin, async (req: Request, res) => {
+    try {
+      const { value, error } = validatePeptideBody(req.body);
+      if (error) return res.status(400).json({ error });
+      const [row] = await db
+        .update(peptides)
+        .set({ ...value, updatedAt: new Date() })
+        .where(eq(peptides.id, req.params.id))
+        .returning();
+      if (!row) return res.status(404).json({ error: "Peptide not found" });
+      await writeAudit(req, "update_peptide", "peptide", row.id, { productName: row.productName });
+      res.json(row);
+    } catch (err: any) {
+      console.error("[AFFEXCH] admin peptides PATCH error:", err);
+      res.status(500).json({ error: err?.message || "Failed to update peptide" });
+    }
+  });
+
+  // DELETE /api/admin/peptides/:id — remove an offer.
+  app.delete("/api/admin/peptides/:id", isAuthenticated, requireAdmin, async (req: Request, res) => {
+    try {
+      const [row] = await db.delete(peptides).where(eq(peptides.id, req.params.id)).returning();
+      if (!row) return res.status(404).json({ error: "Peptide not found" });
+      await writeAudit(req, "delete_peptide", "peptide", req.params.id, { productName: row.productName });
+      res.json({ deleted: true });
+    } catch (err: any) {
+      console.error("[AFFEXCH] admin peptides DELETE error:", err);
+      res.status(500).json({ error: err?.message || "Failed to delete peptide" });
+    }
+  });
+
+  // ===== Support chat =====
+  // One private thread per affiliate. Affiliates message support; admins read
+  // every thread and reply. Replaces the old anonymous community chat.
+
+  const SUPPORT_BODY_MAX = 2000;
+
+  // Find or create the calling creator's support thread.
+  async function getOrCreateThread(creatorId: string) {
+    const [existing] = await db
+      .select()
+      .from(supportThreads)
+      .where(eq(supportThreads.creatorId, creatorId))
+      .limit(1);
+    if (existing) return existing;
+    const [created] = await db
+      .insert(supportThreads)
+      .values({ creatorId })
+      .returning();
+    return created;
+  }
+
+  // GET /api/affiliate/support — the creator's own thread + messages.
+  app.get("/api/affiliate/support", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const [thread] = await db
+        .select()
+        .from(supportThreads)
+        .where(eq(supportThreads.creatorId, user.id))
+        .limit(1);
+      if (!thread) return res.json({ thread: null, messages: [] });
+
+      const messages = await db
+        .select()
+        .from(supportMessages)
+        .where(eq(supportMessages.threadId, thread.id))
+        .orderBy(asc(supportMessages.createdAt));
+
+      // Opening the thread clears the creator's unread badge.
+      if (thread.creatorUnreadCount) {
+        db.update(supportThreads)
+          .set({ creatorUnreadCount: 0 })
+          .where(eq(supportThreads.id, thread.id))
+          .catch(() => {});
+      }
+      res.json({ thread: { ...thread, creatorUnreadCount: 0 }, messages });
+    } catch (err: any) {
+      console.error("[AFFEXCH] affiliate support GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to load support chat" });
+    }
+  });
+
+  // POST /api/affiliate/support/messages — body { body }
+  app.post("/api/affiliate/support/messages", isAuthenticated, async (req: Request, res) => {
+    try {
+      const user = req.user as any;
+      if (!user || user.role !== "creator") {
+        return res.status(403).json({ error: "Affiliate role required" });
+      }
+      const text = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+      if (!text || text.length > SUPPORT_BODY_MAX) {
+        return res.status(400).json({ error: `Message must be 1-${SUPPORT_BODY_MAX} chars` });
+      }
+
+      const thread = await getOrCreateThread(user.id);
+      const [msg] = await db
+        .insert(supportMessages)
+        .values({ threadId: thread.id, senderId: user.id, senderRole: "creator", body: text })
+        .returning();
+      await db
+        .update(supportThreads)
+        .set({
+          lastMessageAt: new Date(),
+          updatedAt: new Date(),
+          status: "open",
+          creatorUnreadCount: 0,
+          adminUnreadCount: sql`${supportThreads.adminUnreadCount} + 1`,
+        })
+        .where(eq(supportThreads.id, thread.id));
+
+      // Notify admins so the support inbox gets attention.
+      try {
+        const ns = new NotificationService(storage);
+        const admins = await storage.getAdminUsers();
+        const who = user.firstName || user.email || "An affiliate";
+        for (const a of admins) {
+          await ns.sendNotification(
+            a.id,
+            "system_announcement" as any,
+            "New support message",
+            `${who} sent a message in support chat.`,
+            { linkUrl: "/admin/support" }
+          );
+        }
+      } catch (notifyErr) {
+        console.error("[AFFEXCH] notify on support message failed:", notifyErr);
+      }
+
+      res.json(msg);
+    } catch (err: any) {
+      console.error("[AFFEXCH] affiliate support POST error:", err);
+      res.status(500).json({ error: err?.message || "Failed to send message" });
+    }
+  });
+
+  // GET /api/admin/support-threads — inbox list with creator info + last message.
+  app.get("/api/admin/support-threads", isAuthenticated, requireAdmin, async (_req: Request, res) => {
+    try {
+      const rows = await db
+        .select({
+          id: supportThreads.id,
+          creatorId: supportThreads.creatorId,
+          status: supportThreads.status,
+          lastMessageAt: supportThreads.lastMessageAt,
+          adminUnreadCount: supportThreads.adminUnreadCount,
+          createdAt: supportThreads.createdAt,
+          creatorUsername: users.username,
+          creatorEmail: users.email,
+          creatorFirstName: users.firstName,
+          creatorLastName: users.lastName,
+        })
+        .from(supportThreads)
+        .innerJoin(users, eq(supportThreads.creatorId, users.id))
+        .orderBy(desc(supportThreads.lastMessageAt));
+      res.json(rows);
+    } catch (err: any) {
+      console.error("[AFFEXCH] admin support-threads GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to list support threads" });
+    }
+  });
+
+  // GET /api/admin/support-threads/:id — thread + messages (clears admin unread).
+  app.get("/api/admin/support-threads/:id", isAuthenticated, requireAdmin, async (req: Request, res) => {
+    try {
+      const [thread] = await db
+        .select()
+        .from(supportThreads)
+        .where(eq(supportThreads.id, req.params.id))
+        .limit(1);
+      if (!thread) return res.status(404).json({ error: "Thread not found" });
+
+      const messages = await db
+        .select()
+        .from(supportMessages)
+        .where(eq(supportMessages.threadId, thread.id))
+        .orderBy(asc(supportMessages.createdAt));
+
+      if (thread.adminUnreadCount) {
+        db.update(supportThreads)
+          .set({ adminUnreadCount: 0 })
+          .where(eq(supportThreads.id, thread.id))
+          .catch(() => {});
+      }
+      res.json({ thread: { ...thread, adminUnreadCount: 0 }, messages });
+    } catch (err: any) {
+      console.error("[AFFEXCH] admin support-thread GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to load thread" });
+    }
+  });
+
+  // POST /api/admin/support-threads/:id/messages — admin reply, body { body }
+  app.post("/api/admin/support-threads/:id/messages", isAuthenticated, requireAdmin, async (req: Request, res) => {
+    try {
+      const admin = req.user as any;
+      const text = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+      if (!text || text.length > SUPPORT_BODY_MAX) {
+        return res.status(400).json({ error: `Message must be 1-${SUPPORT_BODY_MAX} chars` });
+      }
+      const [thread] = await db
+        .select()
+        .from(supportThreads)
+        .where(eq(supportThreads.id, req.params.id))
+        .limit(1);
+      if (!thread) return res.status(404).json({ error: "Thread not found" });
+
+      const [msg] = await db
+        .insert(supportMessages)
+        .values({ threadId: thread.id, senderId: admin.id, senderRole: "admin", body: text })
+        .returning();
+      await db
+        .update(supportThreads)
+        .set({
+          lastMessageAt: new Date(),
+          updatedAt: new Date(),
+          adminUnreadCount: 0,
+          creatorUnreadCount: sql`${supportThreads.creatorUnreadCount} + 1`,
+        })
+        .where(eq(supportThreads.id, thread.id));
+
+      try {
+        const ns = new NotificationService(storage);
+        await ns.sendNotification(
+          thread.creatorId,
+          "system_announcement" as any,
+          "Support replied",
+          "The AFFEXCH support team replied to your message.",
+          { linkUrl: "/creator/dashboard" }
+        );
+      } catch (notifyErr) {
+        console.error("[AFFEXCH] notify on admin reply failed:", notifyErr);
+      }
+
+      res.json(msg);
+    } catch (err: any) {
+      console.error("[AFFEXCH] admin support reply error:", err);
+      res.status(500).json({ error: err?.message || "Failed to send reply" });
     }
   });
 }
