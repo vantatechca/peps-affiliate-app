@@ -28,7 +28,7 @@ const LEVEL_CLASS: Record<string, string> = {
 type Summary = {
   kpis: { revenue: Kpi; orders: Kpi; commission: Kpi; aov: Kpi };
   counts: { creators: number; merchants: number; offers: number };
-  pending: { links: number; payoutCount: number; payoutAmount: number };
+  pending: { payoutCount: number; payoutAmount: number };
   lifetime: {
     sales: number;
     grossSales: number;

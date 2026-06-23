@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Local Auth
   await setupAuth(app);
 
-  // AFFEXCH peptide pivot — Phase 4 endpoints (promo code, content links, tier)
+  // AFFEXCH peptide pivot — promo codes, sales-based tiers, peptides, support
   registerAffexchRoutes(app);
 
   // Legacy peps_affiliate storefront compatibility layer (/api/webhooks/*)

@@ -29,7 +29,6 @@ export const commissionTypeEnum = pgEnum('commission_type', ['per_sale', 'per_le
 // (Thresholds live in server/affexchRoutes.ts TIER_THRESHOLDS.)
 export const affiliateTierEnum = pgEnum('affiliate_tier', ['starter', 'verified', 'silver', 'gold', 'elite']);
 export const promoCodeStatusEnum = pgEnum('promo_code_status', ['active', 'paused', 'revoked']);
-export const contentLinkStatusEnum = pgEnum('content_link_status', ['pending', 'approved', 'rejected']);
 export const supportThreadStatusEnum = pgEnum('support_thread_status', ['open', 'closed']);
 export const applicationStatusEnum = pgEnum('application_status', [
   'pending',
@@ -168,9 +167,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   reviews: many(reviews),
   favorites: many(favorites),
 }));
-
-// Social Account Platform Enum (kept — used by contentLinks table)
-export const socialPlatformEnum = pgEnum('social_platform', ['youtube', 'tiktok', 'instagram']);
 
 // Creator profiles
 export const creatorProfiles = pgTable("creator_profiles", {
@@ -644,39 +640,6 @@ export const promoCodesRelations = relations(promoCodes, ({ one, many }) => ({
     references: [users.id],
   }),
   redemptions: many(codeRedemptions),
-}));
-
-// Content links — affiliate-submitted social posts/videos awaiting admin approval
-// NOTE: affiliate_tier is now driven by attributed sales (see server TIER_THRESHOLDS),
-// not by approved content links. Ladder: starter/verified/silver/gold/elite.
-export const contentLinks = pgTable("content_links", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  applicationId: varchar("application_id").references(() => applications.id, { onDelete: 'set null' }),
-  url: varchar("url").notNull(),
-  platform: socialPlatformEnum("platform").notNull(),
-  status: contentLinkStatusEnum("status").notNull().default('pending'),
-  approvedBy: varchar("approved_by").references(() => users.id, { onDelete: 'set null' }),
-  approvedAt: timestamp("approved_at"),
-  rejectionReason: text("rejection_reason"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const contentLinksRelations = relations(contentLinks, ({ one }) => ({
-  creator: one(users, {
-    fields: [contentLinks.creatorId],
-    references: [users.id],
-    relationName: "contentLinkCreator",
-  }),
-  application: one(applications, {
-    fields: [contentLinks.applicationId],
-    references: [applications.id],
-  }),
-  approver: one(users, {
-    fields: [contentLinks.approvedBy],
-    references: [users.id],
-    relationName: "contentLinkApprover",
-  }),
 }));
 
 // Code redemptions — recorded by vendor webhook when a PEP-XXXX-XXXX code is used at checkout
@@ -1706,9 +1669,6 @@ export const insertPlatformHealthSnapshotSchema = createInsertSchema(platformHea
 export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({ id: true, createdAt: true }).extend({
   code: z.string().regex(/^PEP-[A-Z0-9]{4}-[A-Z0-9]{4}$/, "Promo code must match PEP-XXXX-XXXX format"),
 });
-export const insertContentLinkSchema = createInsertSchema(contentLinks).omit({ id: true, createdAt: true, approvedBy: true, approvedAt: true, status: true }).extend({
-  url: z.string().regex(urlRegex, "Please enter a valid URL starting with http:// or https://"),
-});
 export const insertCodeRedemptionSchema = createInsertSchema(codeRedemptions).omit({ id: true, redeemedAt: true });
 
 // Type exports
@@ -1797,7 +1757,5 @@ export type InsertPlatformHealthSnapshot = z.infer<typeof insertPlatformHealthSn
 // AFFEXCH peptide pivot — Phase 2 type exports
 export type PromoCode = typeof promoCodes.$inferSelect;
 export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
-export type ContentLink = typeof contentLinks.$inferSelect;
-export type InsertContentLink = z.infer<typeof insertContentLinkSchema>;
 export type CodeRedemption = typeof codeRedemptions.$inferSelect;
 export type InsertCodeRedemption = z.infer<typeof insertCodeRedemptionSchema>;

@@ -26,7 +26,7 @@ const FEATURES = [
   {
     Icon: BadgeCheck,
     title: "VERIFIED TIERS",
-    desc: "Level up from Verified to Elite as you submit more content links.",
+    desc: "Level up from Verified to Elite as you drive more sales with your code.",
   },
   {
     Icon: ShieldCheck,

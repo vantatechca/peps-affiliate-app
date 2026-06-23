@@ -5,19 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import {
   Copy,
   Check,
   TrendingUp,
   Award,
-  Link as LinkIcon,
-  Send,
   BookOpen,
   Sparkles,
-  Clock,
-  CheckCircle2,
-  XCircle,
   ExternalLink,
   Pencil,
   X,
@@ -100,16 +94,6 @@ export type AffiliateMe = {
   city: string | null;
 };
 
-export type ContentLink = {
-  id: string;
-  url: string;
-  platform: "youtube" | "tiktok" | "instagram";
-  status: "pending" | "approved" | "rejected";
-  rejectionReason: string | null;
-  approvedAt: string | null;
-  createdAt: string;
-};
-
 export type Redemption = {
   id: string;
   saleAmount: string;
@@ -143,9 +127,6 @@ export function useAffiliateMe() {
 export type PromoCodeRow = { id: string; code: string; status: string; active: boolean | null; createdAt: string | null; orderCount: number };
 export function useAffiliatePromoCodes() {
   return useQuery<PromoCodeRow[]>({ queryKey: ["/api/affiliate/promo-codes"] });
-}
-export function useAffiliateContentLinks() {
-  return useQuery<ContentLink[]>({ queryKey: ["/api/affiliate/content-links"] });
 }
 export function useAffiliateRedemptions() {
   return useQuery<Redemption[]>({ queryKey: ["/api/affiliate/redemptions"] });
@@ -541,146 +522,6 @@ export function MilestoneSection({ me: meProp }: { me?: AffiliateMe } = {}) {
   );
 }
 
-export function SubmittedLinksSection({ links: linksProp }: { links?: ContentLink[] } = {}) {
-  const { data: linksFetched } = useAffiliateContentLinks();
-  const links = linksProp ?? linksFetched;
-  return (
-    <Card data-testid="affexch-submitted-links">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-          <LinkIcon className="h-4 w-4 text-primary" /> Submitted Links
-          <span className="ml-auto text-[10px] text-muted-foreground font-normal">
-            {links?.length ?? 0} total
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!links || links.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">
-            No links yet — submit your first one below.
-          </p>
-        ) : (
-          <ul className="space-y-2 max-h-64 overflow-y-auto">
-            {links.map((l) => (
-              <li key={l.id} className="flex items-center gap-2 text-xs p-2 rounded-md border bg-background">
-                <span className="uppercase text-[10px] font-mono text-muted-foreground w-16 shrink-0">{l.platform}</span>
-                <a
-                  href={l.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 truncate text-foreground hover:underline"
-                >
-                  {l.url}
-                </a>
-                <StatusBadge status={l.status} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function StatusBadge({ status }: { status: ContentLink["status"] }) {
-  if (status === "approved") {
-    return (
-      <Badge variant="outline" className="text-[10px] gap-1 border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400">
-        <CheckCircle2 className="h-3 w-3" /> Approved
-      </Badge>
-    );
-  }
-  if (status === "rejected") {
-    return (
-      <Badge variant="outline" className="text-[10px] gap-1 border-destructive/40 text-destructive">
-        <XCircle className="h-3 w-3" /> Rejected
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="outline" className="text-[10px] gap-1">
-      <Clock className="h-3 w-3" /> Pending
-    </Badge>
-  );
-}
-
-export function SubmitLinkSection() {
-  const qc = useQueryClient();
-  const [url, setUrl] = useState("");
-  const [platform, setPlatform] = useState<"youtube" | "tiktok" | "instagram" | "">("");
-  const [err, setErr] = useState("");
-
-  const mut = useMutation({
-    mutationFn: async () => {
-      const resp = await fetch("/api/affiliate/content-links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ url: url.trim(), platform }),
-      });
-      const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(data?.error || "Failed to submit link");
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/affiliate/content-links"] });
-      qc.invalidateQueries({ queryKey: ["/api/affiliate/me"] });
-      setUrl("");
-      setPlatform("");
-      setErr("");
-    },
-    onError: (e: any) => setErr(e?.message || "Failed to submit link"),
-  });
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErr("");
-    if (!url.trim()) return setErr("URL is required");
-    if (!platform) return setErr("Pick a platform");
-    mut.mutate();
-  };
-
-  return (
-    <Card data-testid="affexch-submit-link">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-          <Send className="h-4 w-4 text-primary" /> Submit a Link
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="space-y-2">
-          <Input
-            type="url"
-            placeholder="https://instagram.com/p/your-post"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            inputMode="url"
-            disabled={mut.isPending}
-            className="text-base sm:text-sm"
-          />
-          <Select value={platform} onValueChange={(v) => setPlatform(v as any)} disabled={mut.isPending}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select platform" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="instagram">Instagram</SelectItem>
-              <SelectItem value="tiktok">TikTok</SelectItem>
-              <SelectItem value="youtube">YouTube</SelectItem>
-            </SelectContent>
-          </Select>
-          {err && <p className="text-xs text-destructive">{err}</p>}
-          <Button type="submit" disabled={mut.isPending} className="w-full min-h-11 sm:min-h-10">
-            {mut.isPending ? "Submitting…" : "Submit for review"}
-          </Button>
-          <p className="text-[10px] text-muted-foreground text-center">
-            Approved links count toward your tier. Admin review usually within 24 hours.
-          </p>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function GuidesSection() {
   return (
     <Card data-testid="affexch-guides">
@@ -727,7 +568,6 @@ export function GuidesSection() {
 
 export default function AffexchDashboardSections() {
   const { data: me } = useAffiliateMe();
-  const { data: links } = useAffiliateContentLinks();
   const { data: redemptions } = useAffiliateRedemptions();
 
   return (
@@ -737,10 +577,6 @@ export default function AffexchDashboardSections() {
         <MilestoneSection me={me} />
       </div>
       <SalesTrackerSection redemptions={redemptions} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-        <SubmittedLinksSection links={links} />
-        <SubmitLinkSection />
-      </div>
       <GuidesSection />
     </div>
   );

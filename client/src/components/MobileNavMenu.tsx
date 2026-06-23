@@ -8,7 +8,6 @@ import {
   Building2,
   Users,
   ScrollText,
-  CheckCircle,
   Sparkles,
   Award,
   BookOpen,
@@ -56,7 +55,6 @@ const ADMIN_ITEMS: Item[] = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Merchants", url: "/admin/merchants", icon: Building2 },
   { title: "Creators", url: "/admin/creators", icon: Users },
-  { title: "Link Approval", url: "/admin/content-links", icon: CheckCircle },
   { title: "Payouts", url: "/admin/payouts", icon: Wallet },
   { title: "Audit Trail", url: "/admin/audit-logs", icon: ScrollText },
 ];
