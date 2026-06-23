@@ -3,7 +3,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createHash, timingSafeEqual, randomUUID } from "crypto";
 import { db, pool } from "./db";
-import { promoCodes, contentLinks, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, peptides, supportThreads, supportMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
+import { promoCodes, creatorProfiles, users, offers, vendorProfiles, codeRedemptions, peptides, supportThreads, supportMessages, creatorPayoutMethods, creatorPayouts, auditLogs, legacyOrders, legacyOrderCommissions } from "../shared/schema";
 import { eq, and, asc, desc, sql, inArray, sum } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { getCreatorPromoCode, setCreatorPromoCode, listCreatorPromoCodes, createCreatorPromoCode, setPromoCodeActive, getPromoCodeDeletionInfo, deleteCreatorPromoCode } from "./affexchPromoCode";
@@ -81,7 +81,6 @@ async function getCreatorSalesStats(creatorId: string): Promise<{ orders: number
   return { orders: row?.orders ?? 0, revenue: parseFloat(row?.revenue ?? "0") };
 }
 
-const PLATFORM_REGEX = /^(youtube|tiktok|instagram)$/i;
 const URL_REGEX = /^https?:\/\/.+\..+/i;
 const PROMO_CODE_REGEX = /^PEP-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 
@@ -407,25 +406,6 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
-  // GET /api/affiliate/content-links — list this creator's submitted links
-  app.get("/api/affiliate/content-links", isAuthenticated, async (req: Request, res) => {
-    try {
-      const user = req.user as any;
-      if (!user || user.role !== "creator") {
-        return res.status(403).json({ error: "Affiliate role required" });
-      }
-      const rows = await db
-        .select()
-        .from(contentLinks)
-        .where(eq(contentLinks.creatorId, user.id))
-        .orderBy(desc(contentLinks.createdAt));
-      res.json(rows);
-    } catch (err: any) {
-      console.error("[AFFEXCH] content-links GET error:", err);
-      res.status(500).json({ error: err?.message || "Failed to list content links" });
-    }
-  });
-
   // GET /api/affiliate/offers — public catalog query for the landing page.
   // ?city=Toronto&limit=4 → 4 peptide vendors in Toronto.
   // No city → returns up to `limit` offers across all cities (catalog browse).
@@ -585,55 +565,6 @@ export function registerAffexchRoutes(app: Express) {
     } catch (err: any) {
       console.error("[AFFEXCH] merchants/nearby error:", err);
       res.status(500).json({ error: err?.message || "Failed to load nearby merchants" });
-    }
-  });
-
-  // POST /api/affiliate/content-links — submit a new link
-  app.post("/api/affiliate/content-links", isAuthenticated, async (req: Request, res) => {
-    try {
-      const user = req.user as any;
-      if (!user || user.role !== "creator") {
-        return res.status(403).json({ error: "Affiliate role required" });
-      }
-      const { url, platform } = req.body ?? {};
-      if (!url || typeof url !== "string" || !URL_REGEX.test(url)) {
-        return res.status(400).json({ error: "A valid URL (http:// or https://) is required" });
-      }
-      if (!platform || !PLATFORM_REGEX.test(platform)) {
-        return res.status(400).json({ error: "Platform must be youtube, tiktok, or instagram" });
-      }
-      const [row] = await db
-        .insert(contentLinks)
-        .values({
-          creatorId: user.id,
-          url: url.trim(),
-          platform: platform.toLowerCase() as any,
-          status: "pending",
-        })
-        .returning();
-
-      // Notify every admin so the approval queue gets attention.
-      try {
-        const ns = new NotificationService(storage);
-        const admins = await storage.getAdminUsers();
-        const creatorLabel = user.firstName || user.email || "A creator";
-        for (const a of admins) {
-          await ns.sendNotification(
-            a.id,
-            "system_announcement" as any,
-            "New content link to review",
-            `${creatorLabel} submitted a ${platform.toLowerCase()} link awaiting approval.`,
-            { linkUrl: "/admin/content-links" }
-          );
-        }
-      } catch (notifyErr) {
-        console.error("[AFFEXCH] notify on link submit failed:", notifyErr);
-      }
-
-      res.json(row);
-    } catch (err: any) {
-      console.error("[AFFEXCH] content-links POST error:", err);
-      res.status(500).json({ error: err?.message || "Failed to submit content link" });
     }
   });
 
@@ -1210,7 +1141,6 @@ export function registerAffexchRoutes(app: Express) {
           offers: 0,
         },
         pending: {
-          links: 0,
           payoutCount: pendingPayoutsRow?.count ?? 0,
           payoutAmount: parseFloat(pendingPayoutsRow?.total ?? "0"),
         },
@@ -1554,156 +1484,6 @@ export function registerAffexchRoutes(app: Express) {
     } catch (err: any) {
       console.error("[AFFEXCH] redeem error:", err);
       res.status(500).json({ error: err?.message || "Redemption failed" });
-    }
-  });
-
-  // ===== Phase 7: admin content-link approval queue =====
-
-  // GET /api/admin/content-links — list submissions, optionally filtered by status.
-  // Joins creator info so the admin UI doesn't need a second roundtrip.
-  app.get("/api/admin/content-links", isAuthenticated, requireAdmin, async (req: Request, res) => {
-    try {
-      const status = typeof req.query.status === "string" ? req.query.status : null;
-      const whereClauses: any[] = [];
-      if (status === "pending" || status === "approved" || status === "rejected") {
-        whereClauses.push(eq(contentLinks.status, status));
-      }
-
-      const baseQuery = db
-        .select({
-          id: contentLinks.id,
-          url: contentLinks.url,
-          platform: contentLinks.platform,
-          status: contentLinks.status,
-          rejectionReason: contentLinks.rejectionReason,
-          approvedAt: contentLinks.approvedAt,
-          createdAt: contentLinks.createdAt,
-          creatorId: contentLinks.creatorId,
-          creatorUsername: users.username,
-          creatorEmail: users.email,
-          creatorFirstName: users.firstName,
-          creatorLastName: users.lastName,
-        })
-        .from(contentLinks)
-        .innerJoin(users, eq(contentLinks.creatorId, users.id));
-
-      const rows = await (whereClauses.length > 0
-        ? baseQuery.where(and(...whereClauses))
-        : baseQuery
-      )
-        .orderBy(desc(contentLinks.createdAt))
-        .limit(500);
-
-      res.json(rows);
-    } catch (err: any) {
-      console.error("[AFFEXCH] admin content-links GET error:", err);
-      res.status(500).json({ error: err?.message || "Failed to list content links" });
-    }
-  });
-
-  // NOTE: Affiliate tier no longer derives from approved content links — it is
-  // computed from sales attributed to the creator's promo codes (see
-  // tierFromSales / getCreatorSalesStats). Content-link approval is still a
-  // review workflow but it no longer moves the tier.
-
-  // POST /api/admin/content-links/:id/approve
-  app.post("/api/admin/content-links/:id/approve", isAuthenticated, requireAdmin, async (req: Request, res) => {
-    try {
-      const admin = req.user as any;
-      const linkId = req.params.id;
-
-      const [link] = await db.select().from(contentLinks).where(eq(contentLinks.id, linkId)).limit(1);
-      if (!link) return res.status(404).json({ error: "Content link not found" });
-      if (link.status === "approved") return res.status(409).json({ error: "Already approved" });
-
-      const [updated] = await db
-        .update(contentLinks)
-        .set({
-          status: "approved",
-          approvedBy: admin.id,
-          approvedAt: new Date(),
-          rejectionReason: null,
-        })
-        .where(eq(contentLinks.id, linkId))
-        .returning();
-
-      await writeAudit(req, "approve_content_link", "content_link", linkId, {
-        creatorId: link.creatorId,
-        url: link.url,
-        platform: link.platform,
-      });
-
-      // In-app notification (no email — Phase 6.5 removed email integration)
-      try {
-        const ns = new NotificationService(storage);
-        await ns.sendNotification(
-          link.creatorId,
-          "system_announcement" as any,
-          "Content link approved",
-          "Your submitted link was approved by the admin team.",
-          { linkUrl: "/creator/dashboard" }
-        );
-      } catch (notifyErr) {
-        console.error("[AFFEXCH] notify on approve failed:", notifyErr);
-      }
-
-      res.json({ success: true, contentLink: updated });
-    } catch (err: any) {
-      console.error("[AFFEXCH] admin approve error:", err);
-      res.status(500).json({ error: err?.message || "Approval failed" });
-    }
-  });
-
-  // POST /api/admin/content-links/:id/reject — body { reason? }
-  app.post("/api/admin/content-links/:id/reject", isAuthenticated, requireAdmin, async (req: Request, res) => {
-    try {
-      const admin = req.user as any;
-      const linkId = req.params.id;
-      const reason = typeof req.body?.reason === "string" ? req.body.reason.trim().slice(0, 500) : null;
-
-      const [link] = await db.select().from(contentLinks).where(eq(contentLinks.id, linkId)).limit(1);
-      if (!link) return res.status(404).json({ error: "Content link not found" });
-      if (link.status === "rejected") return res.status(409).json({ error: "Already rejected" });
-
-      const wasApproved = link.status === "approved";
-
-      const [updated] = await db
-        .update(contentLinks)
-        .set({
-          status: "rejected",
-          approvedBy: admin.id,
-          approvedAt: null,
-          rejectionReason: reason,
-        })
-        .where(eq(contentLinks.id, linkId))
-        .returning();
-
-      await writeAudit(req, "reject_content_link", "content_link", linkId, {
-        creatorId: link.creatorId,
-        url: link.url,
-        platform: link.platform,
-        wasApproved,
-      }, reason);
-
-      try {
-        const ns = new NotificationService(storage);
-        await ns.sendNotification(
-          link.creatorId,
-          "system_announcement" as any,
-          "Content link rejected",
-          reason
-            ? `Your submitted link was rejected. Reason: ${reason}`
-            : "Your submitted link was rejected by the admin team.",
-          { linkUrl: "/creator/dashboard" }
-        );
-      } catch (notifyErr) {
-        console.error("[AFFEXCH] notify on reject failed:", notifyErr);
-      }
-
-      res.json({ success: true, contentLink: updated });
-    } catch (err: any) {
-      console.error("[AFFEXCH] admin reject error:", err);
-      res.status(500).json({ error: err?.message || "Rejection failed" });
     }
   });
 

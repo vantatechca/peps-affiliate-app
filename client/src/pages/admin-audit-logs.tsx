@@ -100,8 +100,6 @@ export default function AdminAuditLogs() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Actions</SelectItem>
-                  <SelectItem value="approve_content_link">Approve Link</SelectItem>
-                  <SelectItem value="reject_content_link">Reject Link</SelectItem>
                   <SelectItem value="mark_payout_paid">Mark Payout Paid</SelectItem>
                   <SelectItem value="cancel_payout">Cancel Payout</SelectItem>
                   <SelectItem value="issue_payout_paid">Issue Payout (paid)</SelectItem>

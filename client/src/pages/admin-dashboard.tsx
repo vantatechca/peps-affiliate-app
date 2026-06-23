@@ -7,7 +7,6 @@ import {
   Users,
   Building2,
   DollarSign,
-  CheckCircle,
   Wallet,
   ArrowRight,
   Inbox,
@@ -17,7 +16,7 @@ import { AffexchBootLoader } from "../components/AffexchBootLoader";
 
 type Summary = {
   counts: { creators: number; merchants: number; offers: number };
-  pending: { links: number; payoutCount: number; payoutAmount: number };
+  pending: { payoutCount: number; payoutAmount: number };
   lifetime: {
     sales: number;
     grossSales: number;
@@ -65,7 +64,7 @@ export default function AdminDashboard() {
           <span className="fx-text-sweep">Admin Dashboard</span><span className="fx-caret ml-1">_</span>
         </h1>
         <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground mt-0.5 fx-slide-up fx-delay-2">
-          AFFEXCH platform overview — creators, merchants, link queue, and payout pipeline.
+          AFFEXCH platform overview — creators, merchants, and the payout pipeline.
         </p>
       </header>
 
@@ -83,16 +82,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Pending action queues */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 fx-stagger fx-cards">
-        <PendingCard
-          icon={CheckCircle}
-          accent={(summary?.pending.links ?? 0) > 0 ? "amber" : "neutral"}
-          title="Link approvals"
-          count={summary?.pending.links ?? 0}
-          countLabel={(summary?.pending.links ?? 0) === 1 ? "submission" : "submissions"}
-          description="Creator-submitted content links awaiting your approval."
-          href="/admin/content-links"
-        />
+      <div className="grid grid-cols-1 fx-stagger fx-cards">
         <PendingCard
           icon={Wallet}
           accent={(summary?.pending.payoutCount ?? 0) > 0 ? "amber" : "neutral"}

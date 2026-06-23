@@ -60,7 +60,6 @@ import AdminMerchantDetail from "./pages/admin-merchant-detail";
 import AdminCreators from "./pages/admin-creators";
 import AdminCreatorDetail from "./pages/admin-creator-detail";
 import AdminAuditLogs from "./pages/admin-audit-logs";
-import AdminContentLinks from "./pages/admin-content-links";
 import AdminAnalytics from "./pages/admin-analytics";
 import AdminPeptides from "./pages/admin-peptides";
 import AdminSupport from "./pages/admin-support";
@@ -344,7 +343,6 @@ function ProtectedRouter() {
               </Route>
               <Route path="/admin/creators" component={AdminCreators} />
               <Route path="/admin/creators/:id" component={AdminCreatorDetail} />
-              <Route path="/admin/content-links" component={AdminContentLinks} />
               <Route path="/admin/peptides" component={AdminPeptides} />
               <Route path="/admin/support" component={AdminSupport} />
               <Route path="/admin/audit-logs" component={AdminAuditLogs} />
