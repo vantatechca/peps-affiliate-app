@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GuidesSection } from "../components/AffexchDashboardSections";
+import { GuidesSection, useAffiliatePromoCodes } from "../components/AffexchDashboardSections";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
   Sparkles,
@@ -27,6 +27,13 @@ export default function CreatorGuidesPage() {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
+
+  // Show the creator's own code in the example captions if they have one;
+  // prefer an active code, else any code, else the PEPSCODE10 sample.
+  const { data: codes } = useAffiliatePromoCodes();
+  const sampleCode =
+    codes?.find((c) => c.status === "active")?.code ?? codes?.[0]?.code ?? "PEPSCODE10";
+  const captions = buildExampleCaptions(sampleCode);
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 fx-page">
@@ -88,7 +95,7 @@ export default function CreatorGuidesPage() {
           {/* Copyable examples */}
           <div className="space-y-2">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Example captions</p>
-            {EXAMPLE_CAPTIONS.map((c, i) => (
+            {captions.map((c, i) => (
               <CaptionExample key={i} text={c} />
             ))}
           </div>
@@ -212,16 +219,19 @@ export default function CreatorGuidesPage() {
   );
 }
 
-// Ready-to-use caption examples (swap in the creator's own code + product URL).
-const EXAMPLE_CAPTIONS = [
-  `Grab BPC-157 here 👉 https://merchant.com/products/bpc-157
-Use code PEPSCODE10 in the discount code box at checkout for 10% off ✅`,
-  `💉 My go-to peptide stack is finally back in stock.
+// Ready-to-use caption examples. Uses the creator's own promo code when they
+// have one, otherwise a sample (PEPSCODE10). Product URL is illustrative.
+function buildExampleCaptions(code: string) {
+  return [
+    `Grab BPC-157 here 👉 https://merchant.com/products/bpc-157
+Use code ${code} in the discount code box at checkout for 10% off ✅`,
+    `💉 My go-to peptide stack is finally back in stock.
 🛒 Shop it: https://merchant.com/products/bpc-157
-💸 Drop PEPSCODE10 in the "Discount code" field at checkout for 10% off.`,
-  `Been getting a ton of questions about where I get my peptides — here you go 🔗 https://merchant.com/products/bpc-157
-Don't forget to enter PEPSCODE10 in the discount code field at checkout to save 10%.`,
-];
+💸 Drop ${code} in the "Discount code" field at checkout for 10% off.`,
+    `Been getting a ton of questions about where I get my peptides — here you go 🔗 https://merchant.com/products/bpc-157
+Don't forget to enter ${code} in the discount code field at checkout to save 10%.`,
+  ];
+}
 
 function CaptionExample({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
