@@ -1,37 +1,37 @@
-import { MapPin, Ticket, Activity, Wallet, BadgeCheck, ShieldCheck } from "lucide-react";
+import { FlaskConical, Ticket, Activity, Wallet, BadgeCheck, DollarSign } from "lucide-react";
 import { useReveal, useScramble } from "../lib/hooks";
 import "./Features.css";
 
 const FEATURES = [
   {
-    Icon: MapPin,
-    title: "CITY-BASED MATCHING",
-    desc: "We show only 4 offers closest to your city. Feels local, builds trust.",
+    Icon: FlaskConical,
+    title: "TOP PEPTIDE OFFERS",
+    desc: "Promote a curated catalogue of the hottest-selling peptides, refreshed daily.",
   },
   {
     Icon: Ticket,
     title: "UNIQUE PROMO CODES",
-    desc: "Your code is cross-checked and never used across 600 sites.",
+    desc: "Your own promo code — every sale traces straight back to you.",
   },
   {
     Icon: Activity,
     title: "REAL-TIME TRACKING",
-    desc: "Every sale and commission tracked live in your dashboard.",
+    desc: "Every sale and commission tracked live on your dashboard.",
+  },
+  {
+    Icon: DollarSign,
+    title: "CLEAR COMMISSIONS",
+    desc: "See the exact commission and dollar payout you earn on every offer.",
   },
   {
     Icon: Wallet,
-    title: "INSTANT PAYOUTS",
-    desc: "Weekly payments sent directly to your account automatically.",
+    title: "WEEKLY PAYOUTS",
+    desc: "Your earnings paid out to your account every week.",
   },
   {
     Icon: BadgeCheck,
     title: "VERIFIED TIERS",
-    desc: "Level up from Verified to Elite as you drive more sales with your code.",
-  },
-  {
-    Icon: ShieldCheck,
-    title: "FRAUD PROTECTION",
-    desc: "Every code verified across all 600 websites before assignment.",
+    desc: "Climb from Verified to Elite as you drive more sales.",
   },
 ];
 
@@ -77,7 +77,7 @@ export default function Features() {
           <span className="sq" /> BUILT FOR AFFILIATES &nbsp;//&nbsp; NO_006
         </div>
         <h2 className="feats__title display">{titleDisplay}</h2>
-        <div className="feats__sub">// Everything you need to convert local traffic into revenue</div>
+        <div className="feats__sub">// Everything you need to promote peptides and get paid</div>
       </div>
 
       <div className="feats__grid">

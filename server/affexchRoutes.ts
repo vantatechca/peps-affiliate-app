@@ -1567,6 +1567,38 @@ export function registerAffexchRoutes(app: Express) {
     }
   });
 
+  // GET /api/affiliate/top-offers — PUBLIC landing-page version of the
+  // "Hot Selling Peptides" catalogue: same active rows, same daily shuffle as
+  // the affiliate dashboard, mapped to the landing card shape (name/size/price/
+  // earn/badge). Price + earn only appear once an admin sets a price; until
+  // then the card shows the commission only, exactly like the affiliate cards.
+  app.get("/api/affiliate/top-offers", async (req: Request, res) => {
+    try {
+      const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? "6"), 10) || 6, 1), 24);
+      const rows = await db.select().from(peptides).where(eq(peptides.isActive, true));
+      const shuffled = seededShuffle(rows, dailySeed()).slice(0, limit);
+      const result = shuffled.map((p) => {
+        const pct = Number(p.commissionPercent) || 0;
+        const price = p.priceUsd != null && String(p.priceUsd) !== "" ? parseFloat(String(p.priceUsd)) : null;
+        const hasPrice = price != null && Number.isFinite(price);
+        const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
+        const earned = hasPrice ? Math.round((pct / 100) * price * 100) / 100 : null;
+        return {
+          id: p.id,
+          name: p.productName,
+          size: p.size || "",
+          price: hasPrice ? "$" + fmt(price) : "",
+          earn: earned != null ? "+$" + fmt(earned) : "",
+          badge: `${pct}%`,
+        };
+      });
+      res.json(result);
+    } catch (err: any) {
+      console.error("[AFFEXCH] top-offers GET error:", err);
+      res.status(500).json({ error: err?.message || "Failed to load top offers" });
+    }
+  });
+
   // GET /api/admin/peptides — full list for management.
   app.get("/api/admin/peptides", isAuthenticated, requireAdmin, async (_req: Request, res) => {
     try {

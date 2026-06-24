@@ -104,10 +104,12 @@ function ProductCard({ p, i, isTouch, isLocal }) {
           )}
         </div>
 
-        <div className="pep-card__foot">
-          <span className="pep-card__price">{p.price}</span>
-          <span className="pep-card__earn">{p.earn}</span>
-        </div>
+        {p.price ? (
+          <div className="pep-card__foot">
+            <span className="pep-card__price">{p.price}</span>
+            <span className="pep-card__earn">{p.earn}</span>
+          </div>
+        ) : null}
 
         <span className="pep-card__scan" />
 
@@ -148,6 +150,21 @@ export default function PeptideOffers() {
     staleTime: 60_000,
   });
 
+  // No-city default: the real "Hot Selling Peptides" catalogue — the same
+  // admin-curated, daily-shuffled offers shown on the affiliate dashboard.
+  // Falls back to the static GENERIC_PRODUCTS list if the request fails so the
+  // landing page is never empty.
+  const { data: topOffers } = useQuery({
+    queryKey: ["/api/affiliate/top-offers", { limit: 6 }],
+    queryFn: async () => {
+      const r = await fetch("/api/affiliate/top-offers?limit=6");
+      if (!r.ok) throw new Error("top offers fetch failed");
+      return await r.json();
+    },
+    enabled: !city,
+    staleTime: 60_000,
+  });
+
   // Rotate the cards' reveal animation whenever the city changes so the
   // new offers slide in fresh rather than swapping in place.
   // Re-shuffle the generic catalog once per day so the order feels refreshed.
@@ -155,12 +172,16 @@ export default function PeptideOffers() {
   // without a reload for anyone who leaves the tab open.
   const dayKey = Math.floor(Date.now() / 86400000);
   const offers = useMemo(() => {
-    if (!city) return dailyShuffle(GENERIC_PRODUCTS);
+    if (!city) {
+      // Live catalogue when available; static list as a never-empty fallback.
+      if (topOffers && topOffers.length > 0) return topOffers;
+      return dailyShuffle(GENERIC_PRODUCTS);
+    }
     if (apiOffers && apiOffers.length > 0) return apiOffers;
     if (isError) return offersForCity(city); // network-error fallback
     if (apiOffers && apiOffers.length === 0) return offersForCity(city); // unseeded-city fallback
     return offersForCity(city); // initial render before fetch completes
-  }, [city, apiOffers, isError, dayKey]);
+  }, [city, apiOffers, topOffers, isError, dayKey]);
   const isLocal = !!city;
   const renderKey = city ? city.id : "generic";
 
@@ -174,7 +195,7 @@ export default function PeptideOffers() {
         <div className="pep__sub">
           {city
             ? `// 4 closest peptide businesses in ${city.name}`
-            : "// Highest converting peptide products near you"}
+            : "// Highest converting peptide products"}
         </div>
 
         {city && (
