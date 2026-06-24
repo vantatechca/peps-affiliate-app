@@ -301,7 +301,16 @@ type PeptideOffer = {
   merchantUrl: string | null;
   discountPercent: number;
   commissionPercent: number;
+  priceUsd: string | null;
+  size: string | null;
 };
+
+// "120.00" → "$120", "120.50" → "$120.50". Drops trailing .00 for tidiness.
+function formatMoney(n: number): string {
+  const rounded = Math.round(n * 100) / 100;
+  const str = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+  return `$${str}`;
+}
 
 function TopPeptideOffers() {
   const { data = [], isLoading } = useQuery<PeptideOffer[]>({
@@ -337,11 +346,26 @@ function TopPeptideOffers() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {data.map((p) => {
+              const price = p.priceUsd != null && p.priceUsd !== "" ? parseFloat(p.priceUsd) : null;
+              const earned = price != null && Number.isFinite(price)
+                ? (price * p.commissionPercent) / 100
+                : null;
               const inner = (
                 <>
-                  <p className="font-medium text-sm leading-tight">{p.productName}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-sm leading-tight">{p.productName}</p>
+                    {p.size ? (
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                        {p.size}
+                      </span>
+                    ) : null}
+                  </div>
+                  {price != null ? (
+                    <p className="text-xs text-muted-foreground">{formatMoney(price)}</p>
+                  ) : null}
                   <Badge className="text-[10px] bg-primary/15 text-primary border-primary/40 w-fit">
                     {p.commissionPercent}% commission
+                    {earned != null ? ` · earn ${formatMoney(earned)}` : ""}
                   </Badge>
                 </>
               );
