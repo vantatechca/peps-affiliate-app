@@ -1462,6 +1462,10 @@ export const peptides = pgTable("peptides", {
   discountPercent: integer("discount_percent").notNull().default(10),
   // Affiliate commission for promoting it (e.g. 20 → "20% commission").
   commissionPercent: integer("commission_percent").notNull().default(20),
+  // Retail price in USD and vial size (e.g. "10mg") — entered manually by an
+  // admin. Both optional; affiliate cards still show the commission only.
+  priceUsd: decimal("price_usd", { precision: 10, scale: 2 }),
+  size: varchar("size", { length: 40 }),
   isActive: boolean("is_active").notNull().default(true),
   displayOrder: integer("display_order"),
   createdAt: timestamp("created_at").defaultNow(),
