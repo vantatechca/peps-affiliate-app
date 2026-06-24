@@ -167,3 +167,7 @@
   .mod__detail { left: 56%; }
   .mod__pill { font-size: 0.66rem; padding: 8px 12px; }
 }
+
+@media (max-width: 600px) {
+  .mod__detail { left: auto; right: 8px; max-width: 62vw; }
+}

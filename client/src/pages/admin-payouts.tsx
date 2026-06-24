@@ -74,7 +74,7 @@ export default function AdminPayoutsPage() {
   const passiveQueue = queue.filter((q) => q.available >= minPayout);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 fx-page">
+    <div className="max-w-6xl mx-auto space-y-4 fx-page px-3 sm:px-4">
       <header>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground fx-text-in fx-text-glow"><span className="fx-text-sweep">Payouts</span><span className="fx-caret ml-1">_</span></h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1 fx-slide-up fx-delay-2">
@@ -329,7 +329,7 @@ function RequestRow({
   const name =
     [p.creatorFirstName, p.creatorLastName].filter(Boolean).join(" ") || p.creatorEmail || p.creatorId;
   return (
-    <li className="flex items-center gap-3 p-2.5 rounded-md border bg-amber-50/30 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900 fx-pulse-glow">
+    <li className="flex items-center gap-3 flex-wrap p-2.5 rounded-md border bg-amber-50/30 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900 fx-pulse-glow">
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate">{name}</div>
         <div className="text-[10px] text-muted-foreground">
@@ -369,7 +369,7 @@ function CompletedRow({ payout: p }: { payout: PayoutRecord }) {
     [p.creatorFirstName, p.creatorLastName].filter(Boolean).join(" ") || p.creatorEmail || p.creatorId;
   const isPaid = p.status === "paid";
   return (
-    <li className="flex items-center gap-3 text-xs p-2.5 rounded-md border bg-background">
+    <li className="flex items-center gap-3 flex-wrap text-xs p-2.5 rounded-md border bg-background">
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{name}</div>
         <div className="text-[10px] text-muted-foreground">

@@ -246,7 +246,7 @@ export default function HelpSuccessStories() {
               </CardHeader>
               <CardContent className="space-y-5">
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <DollarSign className="h-5 w-5 text-foreground mx-auto mb-1" />
                     <p className="text-lg font-bold">{creator.monthlyEarnings}</p>

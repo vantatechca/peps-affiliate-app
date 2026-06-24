@@ -119,12 +119,12 @@ export default function AdminDashboard() {
                   key={c.creatorId}
                   className="flex items-center gap-3 text-xs p-2 rounded-md border bg-background"
                 >
-                  <span className="font-mono text-[10px] text-muted-foreground w-6">
+                  <span className="font-mono text-[10px] text-muted-foreground w-6 shrink-0">
                     #{String(i + 1).padStart(2, "0")}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{c.name}</div>
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-[10px] text-muted-foreground truncate">
                       {c.saleCount} {c.saleCount === 1 ? "sale" : "sales"} · {c.email}
                     </div>
                   </div>

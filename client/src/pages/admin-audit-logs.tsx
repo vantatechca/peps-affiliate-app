@@ -76,7 +76,7 @@ export default function AdminAuditLogs() {
   };
 
   return (
-    <div className="space-y-6 fx-page">
+    <div className="space-y-6 fx-page px-4 sm:px-6">
       <TopNavBar />
       <div>
         <h1 className="text-3xl font-bold fx-text-in fx-text-glow"><span className="fx-text-sweep">Audit Trail</span><span className="fx-caret ml-1">_</span></h1>

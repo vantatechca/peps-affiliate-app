@@ -1262,7 +1262,7 @@ export default function Settings() {
           <p className="text-muted-foreground mt-1 fx-slide-up fx-delay-2">Manage your account preferences</p>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           <SettingsNavigation sections={settingsSections} />
 
           <div className="flex-1 space-y-8 min-w-0 max-w-4xl">
@@ -1645,7 +1645,7 @@ export default function Settings() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/30">
+          <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/30 flex-wrap gap-2">
             <div className="flex gap-2">
               <Button
                 variant="outline"

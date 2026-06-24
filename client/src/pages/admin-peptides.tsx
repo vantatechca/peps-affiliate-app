@@ -180,8 +180,8 @@ export default function AdminPeptidesPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
-      <header className="flex items-center justify-between gap-3">
+    <div className="max-w-5xl mx-auto space-y-4 px-3 sm:px-4">
+      <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
             <FlaskConical className="h-6 w-6 text-primary" /> Hot Selling Peptides
@@ -209,6 +209,7 @@ export default function AdminPeptidesPage() {
               No offers yet. Add your first peptide offer above.
             </p>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -273,6 +274,7 @@ export default function AdminPeptidesPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -328,7 +330,7 @@ export default function AdminPeptidesPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div>
                 <Label htmlFor="discount">Discount %</Label>
                 <Input

@@ -89,13 +89,13 @@ export default function CompanyProfile() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto px-4 sm:px-6">
       <TopNavBar />
 
       {/* Header Card */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-start gap-6">
+          <div className="flex items-start gap-6 flex-wrap">
             <Avatar className="h-24 w-24">
               <AvatarImage src={proxiedSrc(company.logoUrl) || ''} alt={company.tradeName || company.legalName} />
               <AvatarFallback className="text-2xl">
@@ -103,10 +103,10 @@ export default function CompanyProfile() {
               </AvatarFallback>
             </Avatar>
 
-            <div className="flex-1">
-              <div className="flex items-start justify-between mb-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
                 <div>
-                  <h1 className="text-3xl font-bold">
+                  <h1 className="text-2xl sm:text-3xl font-bold break-words">
                     {company.tradeName || company.legalName}
                   </h1>
                   {company.tradeName && company.legalName && company.tradeName !== company.legalName && (

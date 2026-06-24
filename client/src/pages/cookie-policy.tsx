@@ -29,7 +29,7 @@ export default function CookiePolicy() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl font-bold mb-4">Cookie Policy</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4">Cookie Policy</h1>
             <p className="text-muted-foreground">
               Last Updated: January 19, 2026
             </p>

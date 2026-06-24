@@ -43,7 +43,7 @@ export default function AdminSupportPage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4">
+    <div className="max-w-6xl mx-auto space-y-4 px-3 sm:px-4">
       <header>
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <LifeBuoy className="h-6 w-6 text-primary" /> Support Inbox

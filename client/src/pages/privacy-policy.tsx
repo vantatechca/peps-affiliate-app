@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4">Privacy Policy</h1>
             <p className="text-muted-foreground">
               Last Updated: December 5, 2025
             </p>

@@ -44,9 +44,9 @@ export default function Notifications() {
           {notifications.map((n) => (
             <Card key={n.id} className={`${!n.isRead ? "bg-blue-50 dark:bg-blue-950/20" : ""}`}>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="font-medium">{n.title}</span>
-                  <span className="text-xs text-muted-foreground">
+                <CardTitle className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="font-medium truncate">{n.title}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                     {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                   </span>
                 </CardTitle>
