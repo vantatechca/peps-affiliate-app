@@ -1528,12 +1528,24 @@ export function registerAffexchRoutes(app: Express) {
       const n = Math.round(Number(v));
       return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : dflt;
     };
+    // Optional price (USD) — stored as a numeric string for the decimal column.
+    let priceUsd: string | null = null;
+    if (body?.priceUsd !== undefined && body?.priceUsd !== null && body?.priceUsd !== "") {
+      const n = Number(body.priceUsd);
+      if (!Number.isFinite(n) || n < 0) return { error: "price must be a number ≥ 0" };
+      priceUsd = n.toFixed(2);
+    }
+    // Optional vial size (e.g. "10mg").
+    const size = typeof body?.size === "string" ? body.size.trim() : "";
+    if (size.length > 40) return { error: "size must be 40 characters or fewer" };
     return {
       value: {
         productName,
         merchantUrl: merchantUrl || null,
         discountPercent: toPct(body?.discountPercent, 10),
         commissionPercent: toPct(body?.commissionPercent, 20),
+        priceUsd,
+        size: size || null,
         isActive: body?.isActive === undefined ? true : !!body.isActive,
         displayOrder:
           body?.displayOrder === undefined || body?.displayOrder === null || body?.displayOrder === ""

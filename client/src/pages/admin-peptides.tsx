@@ -33,6 +33,8 @@ type Peptide = {
   merchantUrl: string | null;
   discountPercent: number;
   commissionPercent: number;
+  priceUsd: string | null;
+  size: string | null;
   isActive: boolean;
   displayOrder: number | null;
   createdAt: string;
@@ -43,6 +45,8 @@ type FormState = {
   merchantUrl: string;
   discountPercent: string;
   commissionPercent: string;
+  priceUsd: string;
+  size: string;
   displayOrder: string;
   isActive: boolean;
 };
@@ -52,6 +56,8 @@ const EMPTY_FORM: FormState = {
   merchantUrl: "",
   discountPercent: "10",
   commissionPercent: "20",
+  priceUsd: "",
+  size: "",
   displayOrder: "",
   isActive: true,
 };
@@ -105,6 +111,8 @@ export default function AdminPeptidesPage() {
           merchantUrl: p.merchantUrl,
           discountPercent: p.discountPercent,
           commissionPercent: p.commissionPercent,
+          priceUsd: p.priceUsd,
+          size: p.size,
           displayOrder: p.displayOrder,
           isActive: !p.isActive,
         }),
@@ -141,6 +149,8 @@ export default function AdminPeptidesPage() {
       merchantUrl: p.merchantUrl ?? "",
       discountPercent: String(p.discountPercent),
       commissionPercent: String(p.commissionPercent),
+      priceUsd: p.priceUsd ?? "",
+      size: p.size ?? "",
       displayOrder: p.displayOrder == null ? "" : String(p.displayOrder),
       isActive: p.isActive,
     });
@@ -161,6 +171,8 @@ export default function AdminPeptidesPage() {
         merchantUrl: form.merchantUrl.trim(),
         discountPercent: Number(form.discountPercent) || 0,
         commissionPercent: Number(form.commissionPercent) || 0,
+        priceUsd: form.priceUsd.trim() === "" ? null : form.priceUsd.trim(),
+        size: form.size.trim(),
         displayOrder: form.displayOrder === "" ? null : Number(form.displayOrder),
         isActive: form.isActive,
       },
@@ -201,6 +213,8 @@ export default function AdminPeptidesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Price</TableHead>
                   <TableHead>Discount</TableHead>
                   <TableHead>Commission</TableHead>
                   <TableHead>Order</TableHead>
@@ -225,6 +239,10 @@ export default function AdminPeptidesPage() {
                       ) : (
                         <span>{p.productName}</span>
                       )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{p.size || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {p.priceUsd != null && p.priceUsd !== "" ? `$${p.priceUsd}` : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px]">{p.discountPercent}% off</Badge>
@@ -285,6 +303,30 @@ export default function AdminPeptidesPage() {
                 onChange={(e) => setForm((f) => ({ ...f, merchantUrl: e.target.value }))}
                 placeholder="https://merchant.com/product"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="size">Size</Label>
+                <Input
+                  id="size"
+                  value={form.size}
+                  onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}
+                  placeholder="10mg"
+                  maxLength={40}
+                />
+              </div>
+              <div>
+                <Label htmlFor="price">Price (USD)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.priceUsd}
+                  onChange={(e) => setForm((f) => ({ ...f, priceUsd: e.target.value }))}
+                  placeholder="120.00"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
