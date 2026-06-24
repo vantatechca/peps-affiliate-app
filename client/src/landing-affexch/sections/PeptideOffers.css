@@ -140,6 +140,20 @@
   letter-spacing: 0.08em;
   color: var(--n-45);
 }
+/* Vial size pill beside the product name (e.g. 5mg, 10mg). */
+.pep-card__size {
+  display: inline-block;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--neon);
+  border: 1px solid rgba(0, 255, 231, 0.35);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
 
 /* ---------- Card foot: price + earn pill ---------- */
 .pep-card__foot {
