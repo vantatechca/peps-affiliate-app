@@ -12,7 +12,7 @@ function Caret({ show }) {
 }
 
 export default function Hero() {
-  const { openModal } = useCity();
+  const { openApplication } = useCity();
 
   // Three-line headline typewriter — staggered so they finish before the
   // command-line subtext starts at 2600ms.
@@ -21,7 +21,7 @@ export default function Hero() {
   const [line3, line3Done] = useTypewriter("BUSINESSES", 55, 1600);
 
   const [cmd] = useTypewriter(
-    "// SELECT_YOUR_CITY // GET_YOUR_CODE // START_EARNING",
+    "// APPLY_NOW // GET_YOUR_CODE // START_EARNING",
     24,
     2600
   );
@@ -80,7 +80,7 @@ export default function Hero() {
           {cmd}
           <span className="caret">_</span>
         </div>
-        <button type="button" className="btn-solid hero__cta" onClick={openModal}>
+        <button type="button" className="btn-solid hero__cta" onClick={openApplication}>
           APPLY_NOW
           <span className="shine" />
         </button>

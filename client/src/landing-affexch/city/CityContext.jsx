@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { ALL_CITIES } from "../lib/cities";
 
 /* Shared state for the affiliate application flow:
@@ -14,14 +14,6 @@ export function CityProvider({ children }) {
   const [cityId, setCityId] = useState(null);
   const [open, setOpen] = useState(false);
   const [applicationOpen, setApplicationOpen] = useState(false);
-
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(KEY);
-      if (stored && ALL_CITIES.some((c) => c.id === stored)) setCityId(stored);
-    } catch { /* ignore */ }
-  }, []);
 
   const city = useMemo(
     () => (cityId ? ALL_CITIES.find((c) => c.id === cityId) || null : null),

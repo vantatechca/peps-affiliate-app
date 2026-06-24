@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, ChevronDown, MapPin, Check, ArrowLeft, Send, Copy, ArrowRight } from "lucide-react";
+import { X, ChevronDown, Check, Send, Copy, ArrowRight } from "lucide-react";
 import { useCity } from "./CityContext";
 import "./ApplicationFormModal.css";
 
@@ -59,7 +59,7 @@ function validate(form) {
 }
 
 export default function ApplicationFormModal() {
-  const { applicationOpen, closeApplication, city, openModal } = useCity();
+  const { applicationOpen, closeApplication, city } = useCity();
   const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -124,12 +124,6 @@ export default function ApplicationFormModal() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const blur = (k) => () => setTouched((t) => ({ ...t, [k]: true }));
-
-  const goBackToCity = () => {
-    closeApplication();
-    // Reopen the city modal once the application has finished closing
-    setTimeout(openModal, 360);
-  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -204,7 +198,7 @@ export default function ApplicationFormModal() {
           <>
             <header className="appform__head">
               <div className="appform__eyebrow">
-                <span className="sq" /> AFFILIATE APPLICATION &nbsp;//&nbsp; STEP_02
+                <span className="sq" /> AFFILIATE APPLICATION &nbsp;//&nbsp; NO_001
               </div>
               <h2 className="appform__title display">SUBMIT_APPLICATION</h2>
               <p className="appform__sub">// tell us about you — review in 24 hours</p>
@@ -254,20 +248,6 @@ export default function ApplicationFormModal() {
                   required
                   autoComplete="tel"
                 />
-              </div>
-
-              {/* City — read-only, pre-filled from step 1 */}
-              <div className="appform__field">
-                <label className="appform__label">// City</label>
-                <div className="appform__city-chip">
-                  <MapPin size={14} strokeWidth={1.7} aria-hidden />
-                  <span>{city?.name || "—"}</span>
-                  {city && <span className="appform__city-meta">{city.tag} · {city.country}</span>}
-                  <button type="button" className="appform__city-change" onClick={goBackToCity}>
-                    <ArrowLeft size={11} strokeWidth={1.7} aria-hidden />
-                    CHANGE
-                  </button>
-                </div>
               </div>
 
               <Field
