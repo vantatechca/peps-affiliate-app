@@ -135,3 +135,8 @@
   .hero__tag--ml { top: 64%; left: 22px; }
   .hero__tag--br { bottom: 22%; right: 22px; }
 }
+
+@media (max-width: 600px) {
+  .hero__line { white-space: normal; font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .hero__bottom { max-width: calc(100vw - 32px); }
+}

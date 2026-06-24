@@ -430,6 +430,12 @@ body.affexch-active h3 { font-family: var(--display); font-weight: 700; }
 }
 .reveal.is-in { opacity: 1; transform: none; }
 
+@media (max-width: 600px) {
+  :root { --frame: 10px; }
+  .topbar { padding: 0 8px; }
+  .topbar__actions { gap: 8px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
   html { scroll-behavior: auto; }

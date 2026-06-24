@@ -489,7 +489,7 @@ export default function AdminMerchantDetail() {
               />
             )}
             <div>
-              <h1 className="text-3xl font-bold">{company.legalName}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold break-words">{company.legalName}</h1>
               {company.tradeName && company.tradeName !== company.legalName && (
                 <p className="text-lg text-muted-foreground">Trading as: {company.tradeName}</p>
               )}
@@ -1072,6 +1072,7 @@ export default function AdminMerchantDetail() {
                 ) : offers.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">No offers yet</div>
                 ) : (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1098,6 +1099,7 @@ export default function AdminMerchantDetail() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>

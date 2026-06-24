@@ -1317,7 +1317,7 @@ export default function Settings() {
           <p className="text-muted-foreground mt-1 fx-slide-up fx-delay-2">Manage your profile and account information</p>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           <SettingsNavigation sections={settingsSections} />
 
           <div className="flex-1 space-y-8 min-w-0 max-w-4xl">
@@ -1422,7 +1422,7 @@ export default function Settings() {
                   <div className="space-y-6">
                     <h3 className="text-lg font-semibold border-b pb-2">Company Profile</h3>
                     {/* Company Logo Section - Horizontal Layout */}
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-6 flex-wrap">
                 <div className="relative">
                   <Avatar className="h-24 w-24 ring-2 ring-border">
                     <AvatarImage
@@ -2268,7 +2268,7 @@ export default function Settings() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/30">
+          <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/30 flex-wrap gap-2">
             <div className="flex gap-2">
               <Button
                 variant="outline"

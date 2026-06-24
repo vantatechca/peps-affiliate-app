@@ -137,7 +137,7 @@ export default function CreatorDashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="font-mono text-xl sm:text-2xl font-bold tracking-wider text-foreground select-all truncate">
+                <div className="font-mono text-xl sm:text-2xl font-bold tracking-wider text-foreground select-all break-all">
                   {me?.promoCode ?? "—"}
                 </div>
               )}

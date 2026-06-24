@@ -141,7 +141,7 @@ export default function AdminAnalytics() {
 
       {/* 30-day chart */}
       <Card className="fx-card">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2 flex-wrap">
           <CardTitle className="text-sm sm:text-base flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Sales + commission
           </CardTitle>

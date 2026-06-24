@@ -175,7 +175,7 @@ export default function NotificationDetail() {
             {/* Transaction ID */}
             {transactionId && (
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                <strong>Transaction ID:</strong> {transactionId}
+                <strong>Transaction ID:</strong> <span className="break-all font-mono">{transactionId}</span>
               </div>
             )}
 
@@ -232,7 +232,7 @@ export default function NotificationDetail() {
 
             {/* Payment ID */}
             {paymentId && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
                 Payment ID: {paymentId}
               </div>
             )}
@@ -459,7 +459,7 @@ export default function NotificationDetail() {
               </div>
 
               {companyUserId && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
                   Company User ID: {companyUserId}
                 </div>
               )}
@@ -499,7 +499,7 @@ export default function NotificationDetail() {
               </div>
 
               {offerId && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
                   Offer ID: {offerId}
                 </div>
               )}
@@ -565,15 +565,15 @@ export default function NotificationDetail() {
                     <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{contentType}</span>
                   </div>
                   {contentId && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between min-w-0 gap-2">
                       <span className="text-gray-600 dark:text-gray-400">Content ID</span>
-                      <span className="font-mono text-xs text-gray-900 dark:text-gray-100">{contentId}</span>
+                      <span className="font-mono text-xs text-gray-900 dark:text-gray-100 break-all text-right">{contentId}</span>
                     </div>
                   )}
                   {flagId && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between min-w-0 gap-2">
                       <span className="text-gray-600 dark:text-gray-400">Flag ID</span>
-                      <span className="font-mono text-xs text-gray-900 dark:text-gray-100">{flagId}</span>
+                      <span className="font-mono text-xs text-gray-900 dark:text-gray-100 break-all text-right">{flagId}</span>
                     </div>
                   )}
                 </div>
