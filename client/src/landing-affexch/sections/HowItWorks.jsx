@@ -1,24 +1,24 @@
-import { MapPinned, Ticket, TrendingUp } from "lucide-react";
+import { UserPlus, Ticket, TrendingUp } from "lucide-react";
 import { useReveal, useScramble } from "../lib/hooks";
 import "./HowItWorks.css";
 
 const STEPS = [
   {
     n: "// 01",
-    title: "SELECT YOUR CITY",
-    desc: "Choose your city. We show you only the 4 closest peptide businesses to promote.",
-    Icon: MapPinned,
+    title: "JOIN FREE",
+    desc: "Sign up as an affiliate in minutes. No cost to start.",
+    Icon: UserPlus,
   },
   {
     n: "// 02",
     title: "GET YOUR CODE",
-    desc: "Receive a unique promo code never used across any of our 600 peptide websites.",
+    desc: "Receive your own promo code for our top peptide offers.",
     Icon: Ticket,
   },
   {
     n: "// 03",
-    title: "START EARNING",
-    desc: "Share your code. Track your sales. Get paid weekly.",
+    title: "SHARE & EARN",
+    desc: "Share your code, track every sale, and get paid weekly.",
     Icon: TrendingUp,
   },
 ];
@@ -70,7 +70,7 @@ export default function HowItWorks() {
           <span className="sq" /> THREE STEPS &nbsp;//&nbsp; NO_005
         </div>
         <h2 className="how__title display">{titleDisplay}</h2>
-        <div className="how__sub">// From city to commission in under five minutes</div>
+        <div className="how__sub">// From signup to commission in three simple steps</div>
       </div>
 
       <div className="how__grid">
