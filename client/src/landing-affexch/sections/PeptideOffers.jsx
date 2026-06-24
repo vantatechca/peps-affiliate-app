@@ -100,14 +100,20 @@ function ProductCard({ p, i, isTouch, isLocal }) {
               <span className="pep-card__hood">// {p.neighborhood}, {p.city}</span>
             </div>
           ) : (
-            <div className="pep-card__sub">// commission per sale</div>
+            <div className="pep-card__sub">// your commission per order</div>
           )}
         </div>
 
         {p.price ? (
           <div className="pep-card__foot">
-            <span className="pep-card__price">{p.price}</span>
-            <span className="pep-card__earn">{p.earn}</span>
+            <span className="pep-card__foot-col">
+              <span className="pep-card__foot-label">// price / order</span>
+              <span className="pep-card__price">{p.price}</span>
+            </span>
+            <span className="pep-card__foot-col pep-card__foot-col--earn">
+              <span className="pep-card__foot-label">// you earn</span>
+              <span className="pep-card__earn">{p.earn}</span>
+            </span>
           </div>
         ) : null}
 
@@ -155,9 +161,9 @@ export default function PeptideOffers() {
   // Falls back to the static GENERIC_PRODUCTS list if the request fails so the
   // landing page is never empty.
   const { data: topOffers } = useQuery({
-    queryKey: ["/api/affiliate/top-offers", { limit: 6 }],
+    queryKey: ["/api/affiliate/top-offers", { limit: 8 }],
     queryFn: async () => {
-      const r = await fetch("/api/affiliate/top-offers?limit=6");
+      const r = await fetch("/api/affiliate/top-offers?limit=8");
       if (!r.ok) throw new Error("top offers fetch failed");
       return await r.json();
     },
@@ -229,12 +235,11 @@ export default function PeptideOffers() {
       </div>
 
       {!city && (
-        <div className="pep__cta-row">
-          <button type="button" className="pep__cta" onClick={openModal}>
-            <MapPin size={14} strokeWidth={1.7} aria-hidden />
-            SELECT_YOUR_CITY
-          </button>
-          <span className="pep__cta-hint">// see the 4 closest offers near you</span>
+        <div className="pep__encourage">
+          <span className="pep__encourage-line">The more you sell, the more you earn.</span>
+          <span className="pep__encourage-sub">
+            // every order stacks your commission — climb from Verified to Elite as your sales grow
+          </span>
         </div>
       )}
     </section>

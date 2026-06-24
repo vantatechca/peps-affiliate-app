@@ -12,7 +12,6 @@ import Network from "./sections/Network";
 import NeuralMatch from "./sections/NeuralMatch";
 import CTA from "./sections/CTA";
 import { CityProvider } from "./city/CityContext";
-import CitySelectModal from "./city/CitySelectModal";
 import ApplicationFormModal from "./city/ApplicationFormModal";
 
 export default function Landing() {
@@ -39,7 +38,6 @@ export default function Landing() {
       <div className="fx-scanlines" />
       <div className="fx-vignette" />
 
-      <CitySelectModal />
       <ApplicationFormModal />
     </CityProvider>
   );

@@ -52,6 +52,7 @@
 
 /* ---------- Card wrapper (reveal target) ---------- */
 .pep-card-wrap {
+  height: 100%;
   opacity: 0;
   transform: translateY(36px) scale(0.96);
   transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
@@ -74,10 +75,11 @@
   transition: border-color 0.35s, box-shadow 0.35s, transform 0.2s ease;
   transform-style: preserve-3d;
   animation: pep-breath 4.5s ease-in-out infinite;
-  min-height: 180px;
+  min-height: 200px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 14px;
 }
 
@@ -129,6 +131,9 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: clamp(1.4rem, 2.5vw, 1.95rem);
+  line-height: 1.12;
+  /* Reserve ~2 lines so 1-line and 2-line names align the foot across cards. */
+  min-height: 2.24em;
   letter-spacing: 0.01em;
   color: var(--white);
   margin-bottom: 6px;
@@ -158,13 +163,32 @@
 /* ---------- Card foot: price + earn pill ---------- */
 .pep-card__foot {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 10px;
+  /* margin-top:auto pins the foot to the bottom so every card lines up. */
+  margin-top: auto;
   padding-top: 14px;
   border-top: 1px dashed var(--n-15);
   font-family: var(--mono);
   position: relative;
   z-index: 2;
+}
+.pep-card__foot-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.pep-card__foot-col--earn {
+  align-items: flex-end;
+  text-align: right;
+}
+.pep-card__foot-label {
+  font-size: 0.54rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--n-45);
 }
 .pep-card__price {
   font-size: 1rem;
@@ -177,10 +201,11 @@
   border: 1px solid rgba(0, 255, 231, 0.32);
   color: var(--neon);
   font-weight: 800;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   padding: 4px 10px;
   border-radius: 4px;
   letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 /* ---------- Scan line — sweeps top→bottom on hover ---------- */
@@ -309,41 +334,29 @@
   letter-spacing: 0.06em;
 }
 
-/* ---------- Bottom CTA (only when no city selected) ---------- */
-.pep__cta-row {
+/* ---------- Bottom encouragement (only when no city selected) ---------- */
+.pep__encourage {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-top: 36px;
-}
-.pep__cta {
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, var(--neon-deep), var(--neon));
-  border: none;
-  color: #021016;
-  font-family: var(--mono);
-  font-weight: 800;
-  font-size: 0.82rem;
-  letter-spacing: 0.1em;
-  padding: 13px 22px;
-  border-radius: 4px;
-  cursor: none;
-  box-shadow: 0 0 22px rgba(0, 255, 231, 0.35);
-  transition: transform 0.25s, box-shadow 0.25s;
-  min-height: 44px;
+  margin-top: 40px;
+  text-align: center;
 }
-.pep__cta:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0, 255, 231, 0.65); }
-.pep__cta-hint {
+.pep__encourage-line {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+  letter-spacing: 0.01em;
+  color: var(--neon);
+  text-shadow: 0 0 22px rgba(0, 255, 231, 0.4);
+}
+.pep__encourage-sub {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   letter-spacing: 0.06em;
   color: var(--n-45);
-}
-@media (pointer: coarse) {
-  .pep__cta { cursor: pointer; }
+  max-width: 540px;
 }
 
 /* ---------- Mobile ---------- */
