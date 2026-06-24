@@ -6,15 +6,42 @@ import { useCity } from "../city/CityContext";
 import { offersForCity } from "../lib/cities";
 import "./PeptideOffers.css";
 
-/* Default (no-city) catalog — the original 6 generic peptide offers. */
+/* Default (no-city) catalog — the original 6 generic peptide offers.
+   `size` (e.g. "5mg", "10mg") and `price` are filled in manually — leave
+   `size` as "" until you have the vial size, and edit `price` per product. */
 const GENERIC_PRODUCTS = [
-  { name: "BPC-157",    price: "$120", earn: "+$24", badge: "20%" },
-  { name: "TB-500",     price: "$140", earn: "+$28", badge: "20%" },
-  { name: "CJC-1295",   price: "$95",  earn: "+$19", badge: "20%" },
-  { name: "Ipamorelin", price: "$90",  earn: "+$18", badge: "20%" },
-  { name: "Sermorelin", price: "$110", earn: "+$22", badge: "20%" },
-  { name: "Epithalon",  price: "$130", earn: "+$26", badge: "20%" },
+  { name: "BPC-157",    size: "", price: "$120", earn: "+$24", badge: "20%" },
+  { name: "TB-500",     size: "", price: "$140", earn: "+$28", badge: "20%" },
+  { name: "CJC-1295",   size: "", price: "$95",  earn: "+$19", badge: "20%" },
+  { name: "Ipamorelin", size: "", price: "$90",  earn: "+$18", badge: "20%" },
+  { name: "Sermorelin", size: "", price: "$110", earn: "+$22", badge: "20%" },
+  { name: "Epithalon",  size: "", price: "$130", earn: "+$26", badge: "20%" },
 ];
+
+/* Deterministic PRNG (mulberry32) — same seed always yields the same sequence. */
+function mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* Shuffle the full catalog into a fresh arrangement that's stable for the
+   whole day, then changes the next day — so the page feels updated daily
+   without ever dropping a product. Seed = number of days since the epoch. */
+function dailyShuffle(list) {
+  const daySeed = Math.floor(Date.now() / 86400000);
+  const rand = mulberry32(daySeed);
+  const arr = list.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 /* Touch detection so 3D tilt is skipped on mobile. */
 function useIsTouch() {
@@ -63,7 +90,10 @@ function ProductCard({ p, i, isTouch, isLocal }) {
         </div>
 
         <div className="pep-card__body">
-          <div className="pep-card__name">{isLocal ? p.business : p.name}</div>
+          <div className="pep-card__name">
+            {isLocal ? p.business : p.name}
+            {!isLocal && p.size ? <span className="pep-card__size">{p.size}</span> : null}
+          </div>
           {isLocal ? (
             <div className="pep-card__local">
               <span className="pep-card__peptide">{p.peptide}</span>
@@ -120,13 +150,17 @@ export default function PeptideOffers() {
 
   // Rotate the cards' reveal animation whenever the city changes so the
   // new offers slide in fresh rather than swapping in place.
+  // Re-shuffle the generic catalog once per day so the order feels refreshed.
+  // `dayKey` flips at midnight, busting the memo so the new arrangement applies
+  // without a reload for anyone who leaves the tab open.
+  const dayKey = Math.floor(Date.now() / 86400000);
   const offers = useMemo(() => {
-    if (!city) return GENERIC_PRODUCTS;
+    if (!city) return dailyShuffle(GENERIC_PRODUCTS);
     if (apiOffers && apiOffers.length > 0) return apiOffers;
     if (isError) return offersForCity(city); // network-error fallback
     if (apiOffers && apiOffers.length === 0) return offersForCity(city); // unseeded-city fallback
     return offersForCity(city); // initial render before fetch completes
-  }, [city, apiOffers, isError]);
+  }, [city, apiOffers, isError, dayKey]);
   const isLocal = !!city;
   const renderKey = city ? city.id : "generic";
 
