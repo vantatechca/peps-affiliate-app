@@ -43,7 +43,7 @@ type PayoutRecord = {
   id: string;
   creatorId: string;
   amount: string;
-  method: string;
+  method: string | null;
   status: "pending" | "paid" | "cancelled";
   reference: string | null;
   notes: string | null;
@@ -333,7 +333,7 @@ function RequestRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate">{name}</div>
         <div className="text-[10px] text-muted-foreground">
-          {p.creatorEmail} · {p.method.toUpperCase()} · requested{" "}
+          {p.creatorEmail} · {(p.method || "—").toUpperCase()} · requested{" "}
           {new Date(p.createdAt).toLocaleDateString()}
         </div>
         {p.notes && (
@@ -373,7 +373,7 @@ function CompletedRow({ payout: p }: { payout: PayoutRecord }) {
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{name}</div>
         <div className="text-[10px] text-muted-foreground">
-          {p.method.toUpperCase()} ·{" "}
+          {(p.method || "—").toUpperCase()} ·{" "}
           {isPaid
             ? `paid ${p.paidAt ? new Date(p.paidAt).toLocaleDateString() : ""}`
             : `cancelled ${new Date(p.createdAt).toLocaleDateString()}`}
